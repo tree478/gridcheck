@@ -9,12 +9,11 @@ export type HourSource = "measured" | "forecast";
 
 /**
  * The single place that reads an hour's measured/forecast status.
- * T-K1 replaces `isForecast` with `tier: "measured" | "forecast" | "pattern"`;
- * when it lands, change this body to:
- *   return h.tier === "measured" ? "measured" : "forecast";
+ * Both non-measured tiers ("forecast" and "pattern") are shown as forecast;
+ * PRD F11 asks for a lighter shade on the "forecast" tier if it is ever added.
  */
 export function hourSource(h: HourIntensity): HourSource {
-  return h.isForecast ? "forecast" : "measured";
+  return h.tier === "measured" ? "measured" : "forecast";
 }
 
 export function sourceLabel(source: HourSource): string {

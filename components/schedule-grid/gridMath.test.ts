@@ -21,7 +21,7 @@ function hoursFrom(startUtcMs: number, count: number): HourIntensity[] {
   return Array.from({ length: count }, (_, i) => ({
     hourStart: new Date(startUtcMs + i * HOUR_MS).toISOString(),
     gco2PerKwh: 200 + i,
-    isForecast: true,
+    tier: "pattern",
   }));
 }
 
@@ -77,7 +77,7 @@ describe("groupByLocalDay", () => {
   });
 
   it("uses the zone passed in, not the machine's local zone", () => {
-    const hour: HourIntensity = { hourStart: "2026-10-18T20:00:00-04:00", gco2PerKwh: 1, isForecast: true };
+    const hour: HourIntensity = { hourStart: "2026-10-18T20:00:00-04:00", gco2PerKwh: 1, tier: "pattern" };
     expect(groupByLocalDay([hour], TZ)[0].dateKey).toBe("2026-10-18");
     expect(groupByLocalDay([hour], "Asia/Tokyo")[0].dateKey).toBe("2026-10-19");
     expect(groupByLocalDay([hour], "UTC")[0].dateKey).toBe("2026-10-19");
@@ -85,7 +85,7 @@ describe("groupByLocalDay", () => {
 
   it("sorts unsorted input and skips unparseable timestamps", () => {
     const [a, b] = hoursFrom(Date.UTC(2026, 9, 19, 4), 2);
-    const days = groupByLocalDay([b, a, { hourStart: "garbage", gco2PerKwh: 1, isForecast: true }], TZ);
+    const days = groupByLocalDay([b, a, { hourStart: "garbage", gco2PerKwh: 1, tier: "pattern" }], TZ);
     expect(days[0].hours.map((h) => h.hour.hourStart)).toEqual([a.hourStart, b.hourStart]);
   });
 });
@@ -166,12 +166,12 @@ describe("makeColorScale", () => {
 
 describe("sanitizeHours", () => {
   it("drops malformed entries and counts them", () => {
-    const good: HourIntensity = { hourStart: MOCK_NOW, gco2PerKwh: 250, isForecast: true };
+    const good: HourIntensity = { hourStart: MOCK_NOW, gco2PerKwh: 250, tier: "pattern" };
     const { valid, dropped } = sanitizeHours([
       good,
-      { hourStart: "not a date", gco2PerKwh: 250, isForecast: true },
-      { hourStart: MOCK_NOW, gco2PerKwh: Number.NaN, isForecast: true },
-      { hourStart: MOCK_NOW, gco2PerKwh: "250", isForecast: true },
+      { hourStart: "not a date", gco2PerKwh: 250, tier: "pattern" },
+      { hourStart: MOCK_NOW, gco2PerKwh: Number.NaN, tier: "pattern" },
+      { hourStart: MOCK_NOW, gco2PerKwh: "250", tier: "pattern" },
       null,
       "x",
     ]);
@@ -186,9 +186,10 @@ describe("sanitizeHours", () => {
 });
 
 describe("hourSource and formatHour", () => {
-  it("reads the forecast flag through one helper", () => {
-    expect(hourSource({ hourStart: MOCK_NOW, gco2PerKwh: 1, isForecast: true })).toBe("forecast");
-    expect(hourSource({ hourStart: MOCK_NOW, gco2PerKwh: 1, isForecast: false })).toBe("measured");
+  it("reads the tier through one helper", () => {
+    expect(hourSource({ hourStart: MOCK_NOW, gco2PerKwh: 1, tier: "pattern" })).toBe("forecast");
+    expect(hourSource({ hourStart: MOCK_NOW, gco2PerKwh: 1, tier: "forecast" })).toBe("forecast");
+    expect(hourSource({ hourStart: MOCK_NOW, gco2PerKwh: 1, tier: "measured" })).toBe("measured");
   });
 
   it("formats in America/New_York with plain spaces", () => {
