@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
+import PlanOptions from "@/components/option-cards/PlanOptions";
 import PlannerForm from "@/components/planner/PlannerForm";
 import ScheduleGrid from "@/components/schedule-grid/ScheduleGrid";
 import { mockBusy } from "@/lib/mocks/busy";
 import { MOCK_NOW, mockGrid } from "@/lib/mocks/grid";
-import { mockScheduleResult } from "@/lib/mocks/schedule";
+import { mockNoWindowResult, mockScheduleResult } from "@/lib/mocks/schedule";
 
 export const metadata: Metadata = { title: "Plan a run · GridWait" };
 
@@ -21,6 +22,11 @@ export default function PlanPage() {
       <div className="mt-6">
         <ScheduleGrid hours={mockGrid.forecast} now={MOCK_NOW} busy={mockBusy} result={mockScheduleResult} />
       </div>
+      <PlanOptions
+        result={mockScheduleResult}
+        noWindowResult={mockNoWindowResult}
+        forecastMadeAt={mockGrid.forecastMadeAt}
+      />
     </div>
   );
 }

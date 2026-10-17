@@ -96,10 +96,10 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [x] **T-B4 Grid overlays** · Must · branch `b/overlays`
   - Busy blocks (sleep in a distinct shade); option blocks labeled Recommended / Greenest / Soonest, one block with combined labels when they coincide; markers for when the user is needed.
   - **Done when:** mock busy blocks and mock options display correctly, including blocks that cross midnight.
-- [ ] **T-B5 Option cards** · Must · branch `b/option-cards` · depends on T-C4 types/mocks
+- [x] **T-B5 Option cards** · Must · branch `b/option-cards` · depends on T-C4 types/mocks
   - Each card: time window, modeled CO₂, % saved vs. Soonest, confidence badge, attention needed, "Add to calendar," "Choose" (saves to guest history). After Choose, remaining activities' options refresh. One-line diversity explanation; "modeled estimate" label; loading, error, and "no valid window" (with suggestion) states. Worst is not shown as a card.
   - **Done when:** all states render with mock data.
-- [ ] **T-B6 Impact dashboard** · Then · branch `b/dashboard` · depends on T-C5, T-C9
+- [x] **T-B6 Impact dashboard** · Then · branch `b/dashboard` · depends on T-C5, T-C9
   - Reads guest history: overall score + band; total CO₂ saved vs. Soonest (negatives shown; kg when ≥ 1000 g); total modeled emissions; counts; band breakdown; runs list newest first (date, appliance, window, CO₂, saved, score + band, rank, status); sort by most recent / most sustainable; mark done, delete; empty state; note that scores use planning-time forecasts and history stays on this device.
   - **Done when:** it renders with mock runs and with an empty history.
 - [ ] ~~**T-B7 Sign up**~~ · **CUT** (accounts)
