@@ -33,7 +33,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 
 - [x] **T-00 – T-03 Scaffold, rules/docs, original types/constants, mocks, demo .ics** · S
 - [x] **T-04 Folder skeleton** · skipped; B creates the pages in T-B1.
-- [ ] **T-K1 Update shared contract** · All (S drives) · **Must, blocks everyone** · branch `soumya/contract`
+- [x] **T-K1 Update shared contract** · All (S drives) · **Must, blocks everyone** · branch `soumya/contract`
   - Replace `lib/types.ts` and `lib/constants.ts` with PRD §7–§8 exactly (tiers, `forecastMadeAt`, activity catalog with attention type and delay-start, `BusyBlock.asleep`, option labels, `RunRecord`, shared config including `NEAR_TIE_MARGIN = 0.03` and `MAX_DELAY_START_HOURS = 24`).
   - Update `lib/mocks/*` to the new types: a `GridResponse` with `measured` recent hours and 168 `pattern` hours; a student-week `BusyBlock[]` including sleep; a mock `ScheduleResult` with merged labels.
   - Put PRD v2.1 at `docs/PRD.md` and this file at `docs/TODO.md`.
