@@ -117,7 +117,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [ ] **T-C7 Schedule input** · Must · branch `c/schedule`
   - `lib/schedule-input/`: demo schedule (student week: classes, job shift, recurring club meeting, sleep, gaps) and helpers to add/remove manual busy blocks with an "asleep" flag. Output sorted, merged `BusyBlock[]` (merged block is asleep only if all parts are).
   - **Done when:** tests pass for merge, sort, and asleep handling.
-- [ ] **T-C2 Validity rules** · Must · branch `c/validity`
+- [x] **T-C2 Validity rules** · Must · branch `c/validity`
   - Run finishes by the deadline; user free at every attended moment for the attention type; busy and sleep blocks block only attended moments; delay-start loading at any free, non-asleep moment up to 24 h before start; multi-appliance attended moments ≥ 15 min apart.
   - **Done when:** tests cover start blocked, end blocked, busy middle allowed, sleep middle allowed, delay-start load during sleep rejected, past-deadline rejected.
 - [ ] **T-C3 Emissions** · Must · branch `c/emissions`
