@@ -25,7 +25,7 @@ Everything in Phase 0 goes to `main` before anyone branches.
 - [x] **T-01 Add rules and docs** · S
   - Add `AGENTS.md`, `CLAUDE.md` (contains `@AGENTS.md`), `.cursor/rules/project.mdc`, `docs/PRD.md`, `docs/TODO.md`. Confirm `.env.local` is in `.gitignore`.
   - **Done when:** files are on main, and `git status` shows no env files tracked.
-- [ ] **T-02 Shared contract** · S (agreed by all)
+- [x] **T-02 Shared contract** · S (agreed by all)
   - Create `lib/types.ts` and `lib/constants.ts` exactly as in PRD §7–§8.
   - **Done when:** both files compile and are on main.
 - [ ] **T-03 Mocks and demo data** · S
