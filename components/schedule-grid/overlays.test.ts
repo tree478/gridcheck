@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import { mockGrid } from "../../lib/mocks/grid";
 import { mockScheduleResult } from "../../lib/mocks/schedule";
 import { groupByLocalDay } from "./gridMath";
+import { mockBusy } from "../../lib/mocks/busy";
 import {
+  awakeWindowFromBusy,
   desktopVisibleRows,
   drawnOptionsFromResult,
   formatOptionLabels,
   mobileVisibleRows,
   optionDisplayLabel,
+  rowsInAwakeWindow,
   segmentStyle,
   segmentsForRange,
   shouldDrawOption,
@@ -168,6 +171,24 @@ describe("segmentStyle", () => {
   });
 });
 
+describe("awake window", () => {
+  it("derives 7:30 AM–11:30 PM from mock overnight sleep", () => {
+    expect(awakeWindowFromBusy(mockBusy)).toEqual({
+      startHour: 7.5,
+      endHour: 23.5,
+    });
+    // Hours 7 AM–11 PM (row 23 covers 11:00–11:30 PM of the awake window)
+    expect(rowsInAwakeWindow(7.5, 23.5, 24)).toEqual(
+      Array.from({ length: 17 }, (_, i) => i + 7),
+    );
+  });
+
+  it("returns null when there are no sleep blocks", () => {
+    expect(awakeWindowFromBusy([])).toBeNull();
+    expect(awakeWindowFromBusy(mockBusy.filter((b) => !b.asleep))).toBeNull();
+  });
+});
+
 describe("option drawing", () => {
   it("draws recommended/greenest and skips soonest/worst/alternative", () => {
     expect(shouldDrawOption({ labels: ["soonest"] })).toBe(false);
@@ -208,6 +229,29 @@ describe("option drawing", () => {
         id: "dishwasher",
         labels: ["best", "greenest"],
         start: "2026-10-19T02:00:00-04:00",
+      },
+      {
+        id: "dishwasher",
+        labels: ["recommended"],
+        start: "2026-10-21T02:00:00-04:00",
+      },
+    ]);
+  });
+
+  it("drops overnight Greenest when an awake window is provided", () => {
+    const awake = awakeWindowFromBusy(mockBusy);
+    const drawn = drawnOptionsFromResult(mockScheduleResult, awake, days);
+    expect(
+      drawn.map((d) => ({
+        id: d.activityId,
+        labels: d.option.labels,
+        start: d.option.start,
+      })),
+    ).toEqual([
+      {
+        id: "washer",
+        labels: ["recommended", "best", "greenest"],
+        start: "2026-10-18T13:00:00-04:00",
       },
       {
         id: "dishwasher",

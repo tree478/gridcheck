@@ -29,7 +29,7 @@ function savedLine(grams: number): string {
 }
 
 export default function RunRow({ row, onMarkDone, onDelete }: Props) {
-  const { run, score, band, rank, savedGrams } = row;
+  const { run, score, band, savedGrams } = row;
   const name = activityName(run.activityId);
   const when = formatRunDate(run.start);
   const status = run.status === "done" ? "Done" : "Scheduled";
@@ -74,10 +74,6 @@ export default function RunRow({ row, onMarkDone, onDelete }: Props) {
           <dd>
             {formatScore(score)} · {band}
           </dd>
-        </div>
-        <div>
-          <dt className={HINT_CLASS}>Rank</dt>
-          <dd>Rank {rank}</dd>
         </div>
         <div>
           <dt className={HINT_CLASS}>Status</dt>

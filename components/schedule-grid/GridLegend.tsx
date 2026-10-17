@@ -1,9 +1,14 @@
 type Props = {
-  /** When true, show busy / sleep / option keys for the plan calendar. */
+  /** When true, show busy / option keys for the plan calendar. */
   overlays?: boolean;
+  /** Greenest key only when an awake Greenest block is on the grid. */
+  showGreenest?: boolean;
 };
 
-export default function GridLegend({ overlays = false }: Props) {
+export default function GridLegend({
+  overlays = false,
+  showGreenest = false,
+}: Props) {
   if (!overlays) return null;
 
   return (
@@ -18,24 +23,19 @@ export default function GridLegend({ overlays = false }: Props) {
       <li className="flex items-center gap-1.5">
         <span
           aria-hidden="true"
-          className="inline-block h-4 w-6 rounded bg-sleep"
-        />
-        Sleep
-      </li>
-      <li className="flex items-center gap-1.5">
-        <span
-          aria-hidden="true"
           className="inline-block h-4 w-6 rounded bg-scale-dirty"
         />
         Recommended
       </li>
-      <li className="flex items-center gap-1.5">
-        <span
-          aria-hidden="true"
-          className="inline-block h-4 w-6 rounded bg-primary"
-        />
-        Greenest
-      </li>
+      {showGreenest && (
+        <li className="flex items-center gap-1.5">
+          <span
+            aria-hidden="true"
+            className="inline-block h-4 w-6 rounded bg-primary"
+          />
+          Greenest
+        </li>
+      )}
     </ul>
   );
 }

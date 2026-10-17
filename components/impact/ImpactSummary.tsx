@@ -1,4 +1,3 @@
-import { SCORE_BANDS } from "@/lib/constants";
 import type { ScoreBand } from "@/lib/types";
 import { HINT_CLASS } from "@/components/planner/plannerStyles";
 import {
@@ -40,7 +39,7 @@ export default function ImpactSummary({ totals }: Props) {
         </div>
 
         <div>
-          <p className="text-sm font-medium text-muted">CO₂ saved vs Soonest</p>
+          <p className="text-sm font-medium text-muted">CO₂ saved</p>
           <p
             className={`mt-2 text-4xl font-bold tabular-nums tracking-tight sm:text-5xl ${
               totals.totalSavedGrams < 0 ? "text-error" : "text-ink"
@@ -68,15 +67,6 @@ export default function ImpactSummary({ totals }: Props) {
           <p className="mt-0.5 text-xs text-muted">{runLabel} on this device</p>
         </div>
       </div>
-
-      <h3 className="mt-6 text-sm font-medium text-muted">Band breakdown</h3>
-      <ul className="mt-2 space-y-1 text-sm text-muted">
-        {SCORE_BANDS.map(({ band }) => (
-          <li key={band}>
-            {totals.bandBreakdown[band]} × {band}
-          </li>
-        ))}
-      </ul>
     </section>
   );
 }

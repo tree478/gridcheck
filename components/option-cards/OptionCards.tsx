@@ -13,15 +13,9 @@ type Props = {
   result: ActivityResult;
   chosen: ScheduleOption | null;
   onChoose: (option: ScheduleOption) => void;
-  calendarHintId: string;
 };
 
-export default function OptionCards({
-  result,
-  chosen,
-  onChoose,
-  calendarHintId,
-}: Props) {
+export default function OptionCards({ result, chosen, onChoose }: Props) {
   const name = activityName(result.activityId);
   const headingId = `${result.activityId}-options-heading`;
 
@@ -43,12 +37,12 @@ export default function OptionCards({
   if (chosen) {
     return (
       <section aria-labelledby={headingId} className="min-w-0">
-        <h3 id={headingId} className="text-xl font-semibold text-ink">
+        <h3 id={headingId} className="text-xl font-semibold text-primary">
           {name}
         </h3>
         <p
           role="status"
-          className="mt-3 border-l-4 border-l-primary bg-primary-tint px-4 py-3 text-sm text-callout"
+          className="mt-3 border-l-4 border-l-scale-dirty bg-scale-dirty/10 px-4 py-3 text-sm text-callout"
         >
           {chosenSummary(name, chosen)}
         </p>
@@ -66,7 +60,7 @@ export default function OptionCards({
 
   return (
     <section aria-labelledby={headingId} className="min-w-0">
-      <h3 id={headingId} className="text-xl font-semibold text-ink">
+      <h3 id={headingId} className="text-xl font-semibold text-primary">
         {name}
       </h3>
       {activity && ordered.length > 0 ? (
@@ -82,7 +76,6 @@ export default function OptionCards({
                   activity={activity}
                   option={option}
                   onChoose={() => onChoose(option)}
-                  calendarHintId={calendarHintId}
                 />
               </li>
             );

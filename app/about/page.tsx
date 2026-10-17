@@ -1,62 +1,85 @@
 import type { Metadata } from "next";
+import TeamCard from "@/components/about/TeamCard";
 
 export const metadata: Metadata = { title: "About · GridCheck" };
+
+const TEAM = [
+  {
+    name: "Miranda Liskov",
+    role: "Frontend & Product Development",
+    school: "University of Massachusetts Amherst · 2029",
+    bio: "Computer Science, Sustainable Energy & Materials",
+    imageSrc: "/team-miranda-liskov.jpg",
+  },
+  {
+    name: "[Creator name]",
+    role: "[Role, e.g. Product & UI]",
+    school: "University of Massachusetts Amherst · 2029",
+    bio: "Short bio goes here — what you built this weekend and why the grid matters to you.",
+  },
+  {
+    name: "[Creator name]",
+    role: "[Role, e.g. Scheduling & scoring]",
+    school: "University of Massachusetts Amherst · 2029",
+    bio: "Short bio goes here — what you built this weekend and why the grid matters to you.",
+  },
+] as const;
 
 export default function AboutPage() {
   return (
     <div className="flex-1 bg-bg">
-      <article className="mx-auto w-full max-w-3xl px-4 py-10 sm:py-14">
-        <h1 className="text-h1 font-extrabold tracking-tight text-ink md:text-h1-desktop">
-          About GridCheck
-        </h1>
-        <p className="mt-3 text-body text-secondary md:text-body-desktop">
-          How we forecast the grid, what the numbers mean, and why Recommended
-          isn&apos;t always Greenest.
-        </p>
+      <article className="mx-auto w-full max-w-5xl px-4 py-10 sm:py-14">
+        <header>
+          <p className="font-mono text-mono-label font-semibold uppercase tracking-[0.12em] text-muted md:text-mono-label-desktop">
+            About
+          </p>
+          <h1 className="mt-3 text-h1 font-extrabold tracking-tight text-ink md:text-h1-desktop">
+            About GridCheck
+          </h1>
+          <p className="mt-3 max-w-2xl text-body text-secondary md:text-body-desktop">
+            Why we built it, and who built it at HackHarvard 2026.
+          </p>
+        </header>
 
-        <section className="mt-10">
-          <h2 className="text-h2 font-extrabold text-ink md:text-h2-desktop">
-            How the forecast works
+        <section
+          aria-labelledby="purpose-heading"
+          className="mt-8 rounded-[var(--radius-card)] bg-primary-tint px-5 py-6 sm:px-8 sm:py-8"
+        >
+          <p className="font-mono text-mono-label font-semibold uppercase tracking-[0.12em] text-primary md:text-mono-label-desktop">
+            Our purpose
+          </p>
+          <h2
+            id="purpose-heading"
+            className="mt-3 text-xl font-extrabold leading-snug tracking-tight text-ink sm:text-2xl md:text-[1.75rem]"
+          >
+            GridCheck helps people run their energy-hungry chores at the hours
+            when the grid is cleanest, without rearranging their lives.
           </h2>
-          <p className="mt-2 text-body leading-relaxed text-secondary md:text-body-desktop">
-            We pull New England&apos;s hourly generation mix from the U.S.
-            Energy Information Administration (EIA) and convert it into an
-            estimated carbon intensity in gCO₂/kWh. Past hours are measured
-            values. Each future hour is forecast as the average of the same
-            weekday and hour over the last 4 weeks of EIA data for New England,
-            so Tuesday 6 PM next week looks like recent Tuesdays at 6 PM.
-            Forecast hours are marked as forecasts wherever they appear.
+          <p className="mt-4 max-w-3xl text-body leading-relaxed text-callout md:text-body-desktop">
+            We think small, well-timed choices add up, and that the numbers we
+            show should be honest about what they are. Every figure in GridCheck
+            is labeled as a modeled estimate.
           </p>
         </section>
 
-        <section className="mt-8">
-          <h2 className="text-h2 font-extrabold text-ink md:text-h2-desktop">
-            What the numbers mean
+        <section className="mt-14" aria-labelledby="team-heading">
+          <h2
+            id="team-heading"
+            className="text-h2 font-extrabold tracking-tight text-ink md:text-h2-desktop"
+          >
+            The Team
           </h2>
-          <p className="mt-2 text-body leading-relaxed text-secondary md:text-body-desktop">
-            These are modeled comparisons based on the average generation mix,
-            not verified avoided emissions, which would require
-            marginal-emissions data.
+          <p className="mt-2 max-w-2xl text-body text-secondary md:text-body-desktop">
+            Built in 36 hours at HackHarvard 2026 for the ASUS &ldquo;Save the
+            Earth&rdquo; sustainability track.
           </p>
-          <p className="mt-2 text-body leading-relaxed text-secondary md:text-body-desktop">
-            Per-load savings are small. Shifting a single laundry or dishwasher
-            load makes only a modest difference; EV charging matters most
-            because it uses far more energy per session. Every number in
-            GridCheck is labeled as a modeled estimate.
-          </p>
-        </section>
-
-        <section className="mt-8">
-          <h2 className="text-h2 font-extrabold text-ink md:text-h2-desktop">
-            Why Recommended may differ from Greenest
-          </h2>
-          <p className="mt-2 text-body leading-relaxed text-secondary md:text-body-desktop">
-            Several times are often nearly as clean as the single greenest hour.
-            If everyone picked that one hour, we would create a new demand peak.
-            So GridCheck spreads users across the near-equal times: Greenest is
-            the absolute lowest-emission window, and Recommended is a stable
-            pick among the windows within a small margin of it.
-          </p>
+          <ul className="mt-6 grid w-full grid-cols-3 gap-2 sm:gap-4">
+            {TEAM.map((member, i) => (
+              <li key={i} className="min-w-0">
+                <TeamCard {...member} />
+              </li>
+            ))}
+          </ul>
         </section>
       </article>
     </div>

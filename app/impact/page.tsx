@@ -11,8 +11,7 @@ export default function ImpactPage() {
           Impact
         </h1>
         <p className="mt-3 max-w-2xl text-body text-secondary md:text-body-desktop">
-          Your score and modeled CO₂ saved vs Soonest — plus the runs planned on
-          this device.
+          Your score and modeled CO₂ saved vs Soonest.
         </p>
         <ImpactDashboard />
       </div>
