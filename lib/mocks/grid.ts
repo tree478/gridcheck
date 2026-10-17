@@ -19,7 +19,7 @@ const HOURLY_PROFILE = [
 ];
 const WEEKEND_OFFSET = -15;
 
-function toEdtIso(ms: number): string {
+export function toEdtIso(ms: number): string {
   return new Date(ms + EDT_OFFSET_MS).toISOString().slice(0, 19) + "-04:00";
 }
 
@@ -30,7 +30,7 @@ function baseIntensity(ms: number): number {
   return HOURLY_PROFILE[local.getUTCHours()] + (weekend ? WEEKEND_OFFSET : 0);
 }
 
-// Deterministic jitter in [-8, 8] so actual data looks less smooth than the forecast.
+// Deterministic jitter in [-8, 8] so measured data looks less smooth than the pattern.
 function jitter(i: number): number {
   return ((i * 37) % 17) - 8;
 }
@@ -39,17 +39,19 @@ const latestMs = NOW_MS - DATA_LAG_HOURS * HOUR_MS;
 
 const recent: HourIntensity[] = Array.from({ length: 48 }, (_, i) => {
   const ms = latestMs - (47 - i) * HOUR_MS;
-  return { hourStart: toEdtIso(ms), gco2PerKwh: baseIntensity(ms) + jitter(i), isForecast: false };
+  return { hourStart: toEdtIso(ms), gco2PerKwh: baseIntensity(ms) + jitter(i), tier: "measured" };
 });
 
+// The "forecast" tier (demand-based, T-S5) is cut, so every future hour is "pattern".
 const forecast: HourIntensity[] = Array.from({ length: 168 }, (_, i) => {
   const ms = NOW_MS + i * HOUR_MS;
-  return { hourStart: toEdtIso(ms), gco2PerKwh: baseIntensity(ms), isForecast: true };
+  return { hourStart: toEdtIso(ms), gco2PerKwh: baseIntensity(ms), tier: "pattern" };
 });
 
 export const mockGrid: GridResponse = {
   region: "ISNE",
   generatedAt: MOCK_NOW,
+  forecastMadeAt: MOCK_NOW,
   latestDataHour: toEdtIso(latestMs),
   source: "live",
   recent,
