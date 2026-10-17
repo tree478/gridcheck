@@ -93,7 +93,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [x] **T-B2 Planner form** · Must · branch `b/planner-form`
   - Pre-fills from catalog defaults. "Use demo schedule" button; busy-block list with "asleep" toggle (add/remove). Multi-select activities with editable duration and energy, and a delay-start toggle where supported. Deadline up to 7 days out. No "Save as my defaults."
   - **Done when:** the form produces a valid `ScheduleRequest` (logged to console) from mock data.
-- [ ] **T-B4 Grid overlays** · Must · branch `b/overlays`
+- [x] **T-B4 Grid overlays** · Must · branch `b/overlays`
   - Busy blocks (sleep in a distinct shade); option blocks labeled Recommended / Greenest / Soonest, one block with combined labels when they coincide; markers for when the user is needed.
   - **Done when:** mock busy blocks and mock options display correctly, including blocks that cross midnight.
 - [ ] **T-B5 Option cards** · Must · branch `b/option-cards` · depends on T-C4 types/mocks

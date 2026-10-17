@@ -1,12 +1,12 @@
 import { colorForT } from "./gridMath";
 
-type Props = { min: number; max: number };
+type Props = { min: number; max: number; overlays?: boolean };
 
 /** Diagonal hatching marks forecast hours without relying on color. Shared with ScheduleGrid. */
 export const FORECAST_HATCH_CLASS =
   "bg-[repeating-linear-gradient(135deg,rgba(255,255,255,0.55)_0_3px,transparent_3px_8px)]";
 
-export default function GridLegend({ min, max }: Props) {
+export default function GridLegend({ min, max, overlays = false }: Props) {
   return (
     <div className="text-xs text-zinc-700 dark:text-zinc-300">
       <div className="flex items-center gap-2">
@@ -52,6 +52,45 @@ export default function GridLegend({ min, max }: Props) {
           Thick outline = now
         </li>
       </ul>
+      {overlays && (
+        <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+          <li className="flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="inline-block h-4 w-6 rounded border border-zinc-400 bg-zinc-800/40 bg-[repeating-linear-gradient(-45deg,rgba(255,255,255,0.35)_0_2px,transparent_2px_6px)]"
+            />
+            Busy
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="inline-block h-4 w-6 rounded border border-indigo-700 bg-indigo-900/50 bg-[radial-gradient(circle,rgba(255,255,255,0.45)_1px,transparent_1.4px)] bg-size-[4px_4px]"
+            />
+            Sleep
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="inline-block h-4 w-6 rounded border border-emerald-800 bg-emerald-700" />
+            Recommended
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="inline-block h-4 w-6 rounded border border-teal-800 bg-teal-700" />
+            Greenest
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span aria-hidden="true" className="inline-block h-4 w-6 rounded border border-sky-800 bg-sky-700" />
+            Soonest
+          </li>
+          <li className="flex items-center gap-1.5">
+            <span
+              aria-hidden="true"
+              className="inline-flex h-4 min-w-6 items-center justify-center rounded bg-zinc-950 px-1 text-[9px] font-bold uppercase text-white dark:bg-white dark:text-zinc-950"
+            >
+              You
+            </span>
+            User needed
+          </li>
+        </ul>
+      )}
     </div>
   );
 }

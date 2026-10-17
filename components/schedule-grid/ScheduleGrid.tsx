@@ -1,8 +1,9 @@
 "use client";
 
 import { useId, useMemo, useState, type KeyboardEvent } from "react";
-import type { HourIntensity } from "@/lib/types";
+import type { BusyBlock, HourIntensity, ScheduleResult } from "@/lib/types";
 import GridLegend, { FORECAST_HATCH_CLASS } from "./GridLegend";
+import GridOverlays from "./GridOverlays";
 import {
   colorForT,
   formatHour,
@@ -16,12 +17,23 @@ import {
   type GridDay,
   type GridHour,
 } from "./gridMath";
+import {
+  busyAriaLabel,
+  desktopVisibleRows,
+  drawnOptionsFromResult,
+  markerAriaLabel,
+  mobileVisibleRows,
+  optionAriaLabel,
+} from "./overlays";
 
 type Props = {
   /** 168 hourly values from the current hour (GridResponse.forecast). */
   hours: HourIntensity[];
   /** ISO instant treated as "now" for the Now marker and the default mobile day. */
   now: string;
+  busy?: BusyBlock[];
+  /** Flattened inside from ok results. Omit until a schedule exists. */
+  result?: ScheduleResult;
 };
 
 type CellRef = { dayIndex: number; row: number };
@@ -36,7 +48,7 @@ function rowsOf(day: GridDay): Map<number, GridHour> {
   return m;
 }
 
-export default function ScheduleGrid({ hours, now }: Props) {
+export default function ScheduleGrid({ hours, now, busy, result }: Props) {
   const baseId = useId();
 
   const model = useMemo(() => {
@@ -53,10 +65,13 @@ export default function ScheduleGrid({ hours, now }: Props) {
       const found = dayRows.map((m) => m.get(r)).find(Boolean);
       rowLabels.push(found ? formatHourOfDay(found.ms) : "");
     }
-    return { days, dropped, scale, nowCell, dayRows, rows, rowLabels };
-  }, [hours, now]);
+    const options = drawnOptionsFromResult(result);
+    return { days, dropped, scale, nowCell, dayRows, rows, rowLabels, options };
+  }, [hours, now, result]);
 
-  const { days, dropped, scale, nowCell, dayRows, rows, rowLabels } = model;
+  const { days, dropped, scale, nowCell, dayRows, rows, rowLabels, options } = model;
+  const busyBlocks = busy ?? [];
+  const hasOverlays = busyBlocks.length > 0 || options.length > 0;
 
   const [selectedDay, setSelectedDay] = useState(() => nowCell?.dayIndex ?? 0);
   const [selected, setSelected] = useState<CellRef | null>(null);
@@ -106,7 +121,7 @@ export default function ScheduleGrid({ hours, now }: Props) {
       </p>
 
       <div className="mt-4">
-        <GridLegend min={scale.min} max={scale.max} />
+        <GridLegend min={scale.min} max={scale.max} overlays={hasOverlays} />
       </div>
 
       {dropped > 0 && (
@@ -181,6 +196,7 @@ export default function ScheduleGrid({ hours, now }: Props) {
                 </span>
               </div>
 
+              <div className="relative flex min-w-0 flex-col gap-px">
               {Array.from({ length: rows }, (_, row) => {
                 const cell = byRow.get(row);
                 if (!cell) {
@@ -220,10 +236,57 @@ export default function ScheduleGrid({ hours, now }: Props) {
                   </button>
                 );
               })}
+              {hasOverlays && (
+                <>
+                  <GridOverlays
+                    className="sm:hidden"
+                    compact={false}
+                    dayIndex={dayIndex}
+                    days={days}
+                    busy={busyBlocks}
+                    options={options}
+                    visibleRows={mobileVisibleRows(day)}
+                    rowHeightPx={44}
+                    now={now}
+                  />
+                  <GridOverlays
+                    className="hidden sm:block"
+                    compact
+                    dayIndex={dayIndex}
+                    days={days}
+                    busy={busyBlocks}
+                    options={options}
+                    visibleRows={desktopVisibleRows(rows)}
+                    rowHeightPx={28}
+                    now={now}
+                  />
+                </>
+              )}
+              </div>
             </div>
           );
         })}
       </div>
+
+      {hasOverlays && (
+        <ul className="sr-only">
+          {busyBlocks.map((block) => (
+            <li key={`${block.start}-${block.end}`}>{busyAriaLabel(block)}</li>
+          ))}
+          {options.map((drawn) => (
+            <li key={`${drawn.activityId}-${drawn.option.start}-${drawn.option.labels.join("-")}`}>
+              {optionAriaLabel(drawn)}
+            </li>
+          ))}
+          {options.flatMap((drawn) =>
+            drawn.option.attendedMoments.map((moment) => (
+              <li key={`${drawn.activityId}-${moment.start}`}>
+                {markerAriaLabel(drawn, moment.start)}
+              </li>
+            )),
+          )}
+        </ul>
+      )}
 
       {/* Details for the tapped cell */}
       <div
