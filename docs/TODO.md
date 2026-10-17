@@ -60,7 +60,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [x] **T-S3 Pattern forecast** · Must · branch `soumya/forecast`
   - `lib/grid/forecast.ts`: each of the next 168 hours = mean intensity at the same local weekday + hour over the last 4 weeks (3 if a week is missing), tagged `pattern`. Fill the gap between the latest measured hour and now with pattern values.
   - **Done when:** tests pass for length 168, DST-safe alignment, flat in → flat out, and gap fill.
-- [ ] **T-S4 `/api/grid` route** · Must · branch `soumya/api-grid`
+- [x] **T-S4 `/api/grid` route** · Must · branch `soumya/api-grid`
   - `app/api/grid/route.ts` returns `GridResponse` (each hour: `hourStart`, `gco2PerKwh`, `tier`; plus `forecastMadeAt`, `source`). Cache 1 h. On any EIA error or timeout, serve `lib/grid/fallback.json` (a real saved snapshot, re-aligned to start at the current hour) with `source: "fallback"`.
   - **Done when:** valid data on the Vercel preview, and fallback data when the key is deliberately broken locally. **Most important task: the demo must survive bad Wi-Fi.**
 - [ ] **T-S6 Calendar export** · Then · branch `soumya/ics-export`
