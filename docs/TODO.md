@@ -123,7 +123,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [ ] **T-C3 Emissions** · Must · branch `c/emissions`
   - Grams = Σ over slots of (slot intensity × kWh per slot), kWh per slot = energy per cycle ÷ slots in run.
   - **Done when:** tests match a hand calculation, including a run spanning two hours.
-- [ ] **T-C4 Ranking** · **Must (single appliance) / Then (multi)** · branch `c/options`
+- [x] **T-C4 Ranking** · **Must (single appliance) / Then (multi)** · branch `c/options`
   - `schedule(req): ScheduleResult` returning Soonest, Greenest, Best (confidence rule; equals Greenest while all hours are `pattern`), Recommended (seeded pick within `NEAR_TIE_MARGIN` of Best), Worst (scoring only), up to 5 alternatives ≥ 60 min apart. Coinciding options merge labels. "No valid window" result with a reason and suggestion (nearest valid run after the deadline, or which constraint blocked it).
   - Build single-appliance first. Then multi-appliance greedy: largest energy first, already-chosen runs as fixed blocks, re-rank the rest.
   - **Done when:** tests cover fixed-seed determinism, Recommended within margin, label merging, alternative spacing, no-window case, and a full run on the mocks.
