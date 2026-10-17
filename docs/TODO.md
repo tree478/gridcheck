@@ -87,7 +87,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
   - Home: purpose statement, "Plan a run" button, "grid right now" card (latest measured intensity).
   - About: how the forecast works (weekly pattern, last 4 weeks), the honesty statement (PRD §9), and why Recommended may differ from Greenest.
   - **Done when:** all routes are navigable at 375px with no horizontal scroll.
-- [ ] **T-B3 7-day schedule grid** · Must · branch `b/schedule-grid` · **hardest screen; start early**
+- [x] **T-B3 7-day schedule grid** · Must · branch `b/schedule-grid` · **hardest screen; start early**
   - Hour cells colored by intensity (scale = min/max of the 7-day forecast); forecast hours visibly marked as forecast; legend; "Now" marker. Day tabs on mobile, full grid on desktop. Tap a cell to see time, value, and tier.
   - **Done when:** it renders the mock forecast correctly at 375px and 1440px.
 - [ ] **T-B2 Planner form** · Must · branch `b/planner-form`
