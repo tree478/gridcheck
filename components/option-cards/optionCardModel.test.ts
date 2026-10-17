@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { ACTIVITY_CATALOG } from "../../lib/constants";
 import { mockGrid } from "../../lib/mocks/grid";
-import { mockNoWindowResult, mockScheduleResult } from "../../lib/mocks/schedule";
+import {
+  mockNoWindowResult,
+  mockScheduleResult,
+} from "../../lib/mocks/schedule";
 import { formatOptionLabels } from "../schedule-grid/overlays";
 import {
   activityById,
@@ -19,27 +22,39 @@ import {
 } from "./optionCardModel";
 
 function okResult(id: "washer" | "dishwasher") {
-  const result = mockScheduleResult.results.find((item) => item.activityId === id);
+  const result = mockScheduleResult.results.find(
+    (item) => item.activityId === id,
+  );
   if (!result || !result.ok) throw new Error(`expected ok result for ${id}`);
   return result;
 }
 
-function optionWith(id: "washer" | "dishwasher", label: "soonest" | "recommended" | "worst" | "alternative") {
-  const found = okResult(id).options.find((option) => option.labels.includes(label));
+function optionWith(
+  id: "washer" | "dishwasher",
+  label: "soonest" | "recommended" | "worst" | "alternative",
+) {
+  const found = okResult(id).options.find((option) =>
+    option.labels.includes(label),
+  );
   if (!found) throw new Error(`expected ${label} option for ${id}`);
   return found;
 }
 
 const washer = activityById("washer");
 const dishwasher = activityById("dishwasher");
-if (!washer || !dishwasher) throw new Error("catalog missing washer or dishwasher");
+if (!washer || !dishwasher)
+  throw new Error("catalog missing washer or dishwasher");
 
 describe("visibleOptions", () => {
   it("filters Worst out of the washer mock and keeps the rest", () => {
     const washerResult = okResult("washer");
     const visible = visibleOptions(washerResult.options);
-    expect(washerResult.options.some((option) => option.labels.includes("worst"))).toBe(true);
-    expect(visible.every((option) => !option.labels.includes("worst"))).toBe(true);
+    expect(
+      washerResult.options.some((option) => option.labels.includes("worst")),
+    ).toBe(true);
+    expect(visible.every((option) => !option.labels.includes("worst"))).toBe(
+      true,
+    );
     expect(visible).toHaveLength(washerResult.options.length - 1);
     expect(visible.map((option) => option.labels)).toEqual([
       ["soonest"],
@@ -54,12 +69,16 @@ describe("cardTitle", () => {
   it("merges labels via formatOptionLabels", () => {
     const recommended = optionWith("washer", "recommended");
     expect(cardTitle(recommended.labels)).toBe("Recommended · Best · Greenest");
-    expect(cardTitle(recommended.labels)).toBe(formatOptionLabels(recommended.labels));
+    expect(cardTitle(recommended.labels)).toBe(
+      formatOptionLabels(recommended.labels),
+    );
   });
 
   it("labels a lone alternative as Alternative", () => {
     expect(cardTitle(["alternative"])).toBe("Alternative");
-    expect(cardTitle(optionWith("washer", "alternative").labels)).toBe("Alternative");
+    expect(cardTitle(optionWith("washer", "alternative").labels)).toBe(
+      "Alternative",
+    );
   });
 });
 
@@ -76,7 +95,9 @@ describe("attentionLines", () => {
   it("omits Load at when loadAt is unset", () => {
     const recommended = optionWith("washer", "recommended");
     expect(recommended.loadAt).toBeUndefined();
-    expect(attentionLines(washer, recommended)).toEqual(["You're needed at the start and the end"]);
+    expect(attentionLines(washer, recommended)).toEqual([
+      "You're needed at the start and the end",
+    ]);
   });
 });
 
@@ -85,9 +106,10 @@ describe("noWindowDetails", () => {
     const ev = mockNoWindowResult.results[0];
     expect(noWindowDetails(ev)).toEqual({
       activityId: "ev",
-      name: "EV charging (Level 2)",
+      name: "Device charging",
       reason: "No free 10-minute moment before your deadline.",
-      suggestion: "The nearest valid run starts Fri Oct 23 at 7:30 AM. Move your deadline later to include it.",
+      suggestion:
+        "The nearest valid run starts Fri Oct 23 at 7:30 AM. Move your deadline later to include it.",
     });
   });
 
@@ -115,7 +137,9 @@ describe("savingsLine", () => {
       savedVsSoonestGrams: -4.2,
       savedVsSoonestPct: -3.5,
     };
-    expect(savingsLine(dirtier)).toBe("-3.5% vs Soonest (-4.2 g, modeled estimate)");
+    expect(savingsLine(dirtier)).toBe(
+      "-3.5% vs Soonest (-4.2 g, modeled estimate)",
+    );
   });
 });
 
@@ -170,8 +194,12 @@ describe("formatWindow and chosenSummary", () => {
   it("reads washer Recommended times from the mock option, in America/New_York", () => {
     const recommended = optionWith("washer", "recommended");
     expect(recommended.start).toBe("2026-10-18T13:00:00-04:00");
-    expect(formatWindow(recommended.start, recommended.end)).toBe("Sun 1 PM–2 PM");
-    expect(chosenSummary("Washer", recommended)).toBe("Washer chosen — Sun 1 PM–2 PM");
+    expect(formatWindow(recommended.start, recommended.end)).toBe(
+      "Sun 1 PM–2 PM",
+    );
+    expect(chosenSummary("Washer", recommended)).toBe(
+      "Washer chosen — Sun 1 PM–2 PM",
+    );
   });
 });
 

@@ -18,14 +18,18 @@ describe("validateSignup", () => {
   });
 
   it("flags an empty username", () => {
-    expect(validateSignup({ ...valid, username: "" }).username).toBe("Enter a username.");
+    expect(validateSignup({ ...valid, username: "" }).username).toBe(
+      "Enter a username.",
+    );
   });
 
   it("flags a 7-character password as weak and accepts 8 characters", () => {
     expect(validateSignup({ ...valid, password: "1234567" }).password).toBe(
       "Use at least 8 characters.",
     );
-    expect(validateSignup({ ...valid, password: "12345678" }).password).toBeUndefined();
+    expect(
+      validateSignup({ ...valid, password: "12345678" }).password,
+    ).toBeUndefined();
   });
 
   it("flags terms unchecked", () => {

@@ -1,7 +1,11 @@
 "use client";
 
 import { useId, useState } from "react";
-import { ERROR_CLASS, FOCUS_RING, HINT_CLASS } from "@/components/planner/plannerStyles";
+import {
+  ERROR_CLASS,
+  FOCUS_RING,
+  HINT_CLASS,
+} from "@/components/planner/plannerStyles";
 import type { ActivityId, ScheduleOption, ScheduleResult } from "@/lib/types";
 import OptionCards from "./OptionCards";
 import {
@@ -28,17 +32,25 @@ type Props = {
   forecastMadeAt: string;
 };
 
-export default function PlanOptions({ result, noWindowResult, forecastMadeAt }: Props) {
+export default function PlanOptions({
+  result,
+  noWindowResult,
+  forecastMadeAt,
+}: Props) {
   const calendarHintId = useId();
   const [preview, setPreview] = useState<Preview>("results");
-  const [chosen, setChosen] = useState<Partial<Record<ActivityId, ScheduleOption>>>({});
+  const [chosen, setChosen] = useState<
+    Partial<Record<ActivityId, ScheduleOption>>
+  >({});
 
-  const status: Status = preview === "loading" ? "loading" : preview === "error" ? "error" : "ready";
+  const status: Status =
+    preview === "loading" ? "loading" : preview === "error" ? "error" : "ready";
   const data = preview === "no-window" ? noWindowResult : result;
   const showDiversity =
     status === "ready" &&
     data.results.some(
-      (item) => item.ok && !chosen[item.activityId] && hasRecommendedCard(item.options),
+      (item) =>
+        item.ok && !chosen[item.activityId] && hasRecommendedCard(item.options),
     );
 
   function handleChoose(
@@ -60,17 +72,20 @@ export default function PlanOptions({ result, noWindowResult, forecastMadeAt }: 
   }
 
   return (
-    <section className="mt-8 min-w-0">
-      <h2 className="text-2xl font-semibold tracking-tight">Your options</h2>
+    <section className="mt-10 min-w-0 border-t border-border pt-8">
+      <h2 className="text-2xl font-semibold tracking-tight text-ink">
+        Your options
+      </h2>
       <p className={`mt-2 ${HINT_CLASS}`}>
-        Times are in America/New_York. Every emissions figure is a modeled estimate.
+        Times are in America/New_York. Every emissions figure is a modeled
+        estimate.
       </p>
       <p id={calendarHintId} className={`mt-1 ${HINT_CLASS}`}>
         {CALENDAR_PLACEHOLDER}
       </p>
 
       {status === "loading" ? (
-        <p role="status" aria-live="polite" className="mt-4 text-zinc-800 dark:text-zinc-200">
+        <p role="status" aria-live="polite" className="mt-4 text-secondary">
           Finding clean times…
         </p>
       ) : null}
@@ -83,7 +98,9 @@ export default function PlanOptions({ result, noWindowResult, forecastMadeAt }: 
 
       {status === "ready" ? (
         <div className="mt-4 space-y-8">
-          {showDiversity ? <p className="text-sm text-zinc-700 dark:text-zinc-300">{DIVERSITY_EXPLANATION}</p> : null}
+          {showDiversity ? (
+            <p className="text-sm text-secondary">{DIVERSITY_EXPLANATION}</p>
+          ) : null}
           {data.results.map((item) => (
             <OptionCards
               key={item.activityId}
@@ -91,7 +108,8 @@ export default function PlanOptions({ result, noWindowResult, forecastMadeAt }: 
               chosen={chosen[item.activityId] ?? null}
               calendarHintId={calendarHintId}
               onChoose={(option) => {
-                if (item.ok) handleChoose(item.activityId, option, item.reference);
+                if (item.ok)
+                  handleChoose(item.activityId, option, item.reference);
               }}
             />
           ))}
@@ -99,7 +117,7 @@ export default function PlanOptions({ result, noWindowResult, forecastMadeAt }: 
       ) : null}
 
       <fieldset className={`mt-8 border-0 p-0 ${HINT_CLASS}`}>
-        <legend className="text-xs text-zinc-500 dark:text-zinc-500">Preview states</legend>
+        <legend className="text-xs text-muted">Preview states</legend>
         <div className="mt-1 flex flex-wrap gap-1">
           {PREVIEW_OPTIONS.map((option) => {
             const selected = preview === option.id;
@@ -111,8 +129,8 @@ export default function PlanOptions({ result, noWindowResult, forecastMadeAt }: 
                 aria-pressed={selected}
                 className={`min-h-11 px-2 text-xs ${FOCUS_RING} ${
                   selected
-                    ? "font-semibold text-zinc-700 underline decoration-zinc-400 underline-offset-4 dark:text-zinc-300"
-                    : "text-zinc-500 dark:text-zinc-500"
+                    ? "font-semibold text-secondary underline decoration-border underline-offset-4"
+                    : "text-muted"
                 }`}
               >
                 {option.label}

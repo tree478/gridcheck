@@ -1,9 +1,19 @@
 // Pure overlay geometry and labels. Relative imports so Vitest resolves without an alias.
 import { ACTIVITY_CATALOG, TIMEZONE } from "../../lib/constants";
-import type { ActivityId, BusyBlock, OptionLabel, ScheduleOption, ScheduleResult } from "../../lib/types";
+import type {
+  ActivityId,
+  BusyBlock,
+  OptionLabel,
+  ScheduleOption,
+  ScheduleResult,
+} from "../../lib/types";
 import { HOUR_MS, isoToGridPosition, type GridDay } from "./gridMath";
 
-export type OverlaySegment = { dayIndex: number; startHour: number; endHour: number };
+export type OverlaySegment = {
+  dayIndex: number;
+  startHour: number;
+  endHour: number;
+};
 
 export type DrawnOption = {
   activityId: ActivityId;
@@ -11,7 +21,6 @@ export type DrawnOption = {
   option: ScheduleOption;
 };
 
-const DRAW_LABELS = new Set<OptionLabel>(["recommended", "greenest", "soonest"]);
 const LABEL_ORDER = ["recommended", "best", "greenest", "soonest"] as const;
 const LABEL_WORDS: Record<(typeof LABEL_ORDER)[number], string> = {
   recommended: "Recommended",
@@ -25,11 +34,16 @@ function normalizeSpaces(s: string): string {
 }
 
 /** Split an ISO [start, end) across day columns. Parts outside the grid are dropped. */
-export function segmentsForRange(startIso: string, endIso: string, days: GridDay[]): OverlaySegment[] {
+export function segmentsForRange(
+  startIso: string,
+  endIso: string,
+  days: GridDay[],
+): OverlaySegment[] {
   if (days.length === 0) return [];
   const startMs = Date.parse(startIso);
   const endMs = Date.parse(endIso);
-  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs) return [];
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || endMs <= startMs)
+    return [];
 
   const startPos = startPosition(startIso, startMs, days);
   const endPos = endPosition(endIso, endMs, days);
@@ -40,7 +54,9 @@ export function segmentsForRange(startIso: string, endIso: string, days: GridDay
   for (let i = startPos.dayIndex; i <= endPos.dayIndex; i++) {
     const startHour = i === startPos.dayIndex ? startPos.hourPosition : 0;
     const endHour =
-      i === endPos.dayIndex ? endPos.hourPosition : (days[i].dayEndMs - days[i].dayStartMs) / HOUR_MS;
+      i === endPos.dayIndex
+        ? endPos.hourPosition
+        : (days[i].dayEndMs - days[i].dayStartMs) / HOUR_MS;
     if (endHour > startHour) out.push({ dayIndex: i, startHour, endHour });
   }
   return out;
@@ -66,7 +82,10 @@ function endPosition(
   if (pos) return pos;
   const last = days[days.length - 1];
   if (ms > last.dayEndMs) {
-    return { dayIndex: days.length - 1, hourPosition: (last.dayEndMs - last.dayStartMs) / HOUR_MS };
+    return {
+      dayIndex: days.length - 1,
+      hourPosition: (last.dayEndMs - last.dayStartMs) / HOUR_MS,
+    };
   }
   return null;
 }
@@ -97,21 +116,30 @@ export function segmentStyle(
   const stride = rowHeightPx + gapPx;
   const firstRow = visibleRows[firstIndex];
   const lastRow = visibleRows[lastIndex];
-  const topPx = firstIndex * stride + Math.max(0, segment.startHour - firstRow) * rowHeightPx;
-  const bottomPx = lastIndex * stride + Math.min(rowHeightPx, (segment.endHour - lastRow) * rowHeightPx);
+  const topPx =
+    firstIndex * stride +
+    Math.max(0, segment.startHour - firstRow) * rowHeightPx;
+  const bottomPx =
+    lastIndex * stride +
+    Math.min(rowHeightPx, (segment.endHour - lastRow) * rowHeightPx);
   const heightPx = bottomPx - topPx;
   if (heightPx <= 0) return null;
   return { topPx, heightPx };
 }
 
 export function mobileVisibleRows(day: GridDay): number[] {
-  return [...new Set(day.hours.map((h) => Math.floor(h.position)))].sort((a, b) => a - b);
+  return [...new Set(day.hours.map((h) => Math.floor(h.position)))].sort(
+    (a, b) => a - b,
+  );
 }
 
 export function desktopVisibleRows(rows: number): number[] {
   return Array.from({ length: rows }, (_, i) => i);
 }
 
+const DRAW_LABELS = new Set<OptionLabel>(["recommended", "greenest"]);
+
+/** Draw Recommended and Greenest only (skip Soonest, Worst, alternatives). */
 export function shouldDrawOption(option: { labels: OptionLabel[] }): boolean {
   return option.labels.some((label) => DRAW_LABELS.has(label));
 }
@@ -122,32 +150,46 @@ export function formatOptionLabels(labels: OptionLabel[]): string {
     .join(" · ");
 }
 
-/** Desktop cells are 28px; combined labels become "Best" when that label is present. */
-export function optionDisplayLabel(labels: OptionLabel[], compact: boolean): string {
-  if (compact && labels.includes("best")) return "Best";
+export function optionDisplayLabel(labels: OptionLabel[]): string {
   return formatOptionLabels(labels);
 }
 
-export function optionTone(labels: OptionLabel[]): "recommended" | "greenest" | "soonest" {
+export function optionTone(
+  labels: OptionLabel[],
+): "recommended" | "greenest" | "soonest" {
   if (labels.includes("recommended")) return "recommended";
   if (labels.includes("greenest")) return "greenest";
   return "soonest";
 }
 
-export function drawnOptionsFromResult(result: ScheduleResult | undefined): DrawnOption[] {
+/** UI label: EV + laptop catalog entries show as Device charging. */
+export function activityDisplayName(id: ActivityId): string {
+  if (id === "ev" || id === "laptop") return "Device charging";
+  return ACTIVITY_CATALOG.find((a) => a.id === id)?.name ?? id;
+}
+
+export function drawnOptionsFromResult(
+  result: ScheduleResult | undefined,
+): DrawnOption[] {
   if (!result) return [];
   const out: DrawnOption[] = [];
   for (const item of result.results) {
     if (!item.ok) continue;
-    const name = ACTIVITY_CATALOG.find((a) => a.id === item.activityId)?.name ?? item.activityId;
+    const name = activityDisplayName(item.activityId);
     for (const option of item.options) {
-      if (shouldDrawOption(option)) out.push({ activityId: item.activityId, name, option });
+      if (shouldDrawOption(option))
+        out.push({ activityId: item.activityId, name, option });
     }
   }
   return out;
 }
 
-export function rangesOverlap(aStart: number, aEnd: number, bStart: number, bEnd: number): boolean {
+export function rangesOverlap(
+  aStart: number,
+  aEnd: number,
+  bStart: number,
+  bEnd: number,
+): boolean {
   return aStart < bEnd && bStart < aEnd;
 }
 
@@ -158,27 +200,44 @@ export function laneForOption(
   dayIndex: number,
   days: GridDay[],
 ): { lane: number; laneCount: number } {
-  const segs = segmentsForRange(drawn.option.start, drawn.option.end, days).filter((s) => s.dayIndex === dayIndex);
+  const segs = segmentsForRange(
+    drawn.option.start,
+    drawn.option.end,
+    days,
+  ).filter((s) => s.dayIndex === dayIndex);
   const overlappingIds = new Set<ActivityId>();
   for (const other of others) {
     if (other === drawn) continue;
-    const otherSegs = segmentsForRange(other.option.start, other.option.end, days).filter(
-      (s) => s.dayIndex === dayIndex,
+    const otherSegs = segmentsForRange(
+      other.option.start,
+      other.option.end,
+      days,
+    ).filter((s) => s.dayIndex === dayIndex);
+    const hits = segs.some((a) =>
+      otherSegs.some((b) =>
+        rangesOverlap(a.startHour, a.endHour, b.startHour, b.endHour),
+      ),
     );
-    const hits = segs.some((a) => otherSegs.some((b) => rangesOverlap(a.startHour, a.endHour, b.startHour, b.endHour)));
     if (hits) overlappingIds.add(other.activityId);
   }
   if (overlappingIds.size === 0) return { lane: 0, laneCount: 1 };
   overlappingIds.add(drawn.activityId);
   const ordered = [...overlappingIds].sort();
-  return { lane: Math.max(0, ordered.indexOf(drawn.activityId)), laneCount: ordered.length };
+  return {
+    lane: Math.max(0, ordered.indexOf(drawn.activityId)),
+    laneCount: ordered.length,
+  };
 }
 
 const clockFormatters = new Map<string, Intl.DateTimeFormat>();
 function clockFormatter(timeZone: string): Intl.DateTimeFormat {
   let f = clockFormatters.get(timeZone);
   if (!f) {
-    f = new Intl.DateTimeFormat("en-US", { timeZone, hour: "numeric", minute: "2-digit" });
+    f = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      hour: "numeric",
+      minute: "2-digit",
+    });
     clockFormatters.set(timeZone, f);
   }
   return f;
@@ -193,7 +252,8 @@ export function formatClock(iso: string, timeZone: string = TIMEZONE): string {
 export function busyAriaLabel(block: BusyBlock): string {
   const when = `${formatClock(block.start)} to ${formatClock(block.end)}`;
   if (block.asleep) {
-    if (block.title && block.title !== "Sleep") return `${block.title} (sleep), ${when}`;
+    if (block.title && block.title !== "Sleep")
+      return `${block.title} (sleep), ${when}`;
     return `Sleep, ${when}`;
   }
   return `${block.title ?? "Busy"}, ${when}`;
@@ -204,15 +264,23 @@ export function optionAriaLabel(drawn: DrawnOption): string {
   return `${drawn.name}, ${labels}, ${formatClock(drawn.option.start)} to ${formatClock(drawn.option.end)}`;
 }
 
-export function markerAriaLabel(drawn: DrawnOption, momentStart: string): string {
+export function markerAriaLabel(
+  drawn: DrawnOption,
+  momentStart: string,
+): string {
   const time = formatClock(momentStart);
   const kind = markerKind(drawn, momentStart);
-  if (kind === "load") return `You needed at ${time} (load ${drawn.name.toLowerCase()})`;
-  if (kind === "end") return `You needed at ${time} (end ${drawn.name.toLowerCase()})`;
+  if (kind === "load")
+    return `You needed at ${time} (load ${drawn.name.toLowerCase()})`;
+  if (kind === "end")
+    return `You needed at ${time} (end ${drawn.name.toLowerCase()})`;
   return `You needed at ${time} (start ${drawn.name.toLowerCase()})`;
 }
 
-export function markerKind(drawn: DrawnOption, momentStart: string): "load" | "start" | "end" {
+export function markerKind(
+  drawn: DrawnOption,
+  momentStart: string,
+): "load" | "start" | "end" {
   if (drawn.option.loadAt && drawn.option.loadAt === momentStart) return "load";
   if (drawn.option.end === momentStart) return "end";
   return "start";

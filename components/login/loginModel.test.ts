@@ -18,15 +18,21 @@ describe("validateLogin", () => {
   });
 
   it("flags an empty username", () => {
-    expect(validateLogin({ ...valid, username: "" }).username).toBe("Enter a username.");
+    expect(validateLogin({ ...valid, username: "" }).username).toBe(
+      "Enter a username.",
+    );
   });
 
   it("flags an empty password", () => {
-    expect(validateLogin({ ...valid, password: "" }).password).toBe("Enter a password.");
+    expect(validateLogin({ ...valid, password: "" }).password).toBe(
+      "Enter a password.",
+    );
   });
 
   it("allows a 7-character password on login", () => {
-    expect(validateLogin({ ...valid, password: "1234567" }).password).toBeUndefined();
+    expect(
+      validateLogin({ ...valid, password: "1234567" }).password,
+    ).toBeUndefined();
     expect(validateLogin({ ...valid, password: "1234567" })).toEqual({});
   });
 });

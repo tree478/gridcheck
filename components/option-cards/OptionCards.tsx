@@ -3,6 +3,7 @@ import OptionCard from "./OptionCard";
 import {
   activityById,
   activityName,
+  cardTone,
   chosenSummary,
   noWindowDetails,
   visibleOptions,
@@ -15,7 +16,12 @@ type Props = {
   calendarHintId: string;
 };
 
-export default function OptionCards({ result, chosen, onChoose, calendarHintId }: Props) {
+export default function OptionCards({
+  result,
+  chosen,
+  onChoose,
+  calendarHintId,
+}: Props) {
   const name = activityName(result.activityId);
   const headingId = `${result.activityId}-options-heading`;
 
@@ -23,12 +29,12 @@ export default function OptionCards({ result, chosen, onChoose, calendarHintId }
     const details = noWindowDetails(result);
     return (
       <section aria-labelledby={headingId} className="min-w-0">
-        <h3 id={headingId} className="text-xl font-semibold">
+        <h3 id={headingId} className="text-xl font-semibold text-ink">
           {name}
         </h3>
-        <p className="mt-2 text-zinc-800 dark:text-zinc-200">{details?.reason}</p>
+        <p className="mt-2 text-secondary">{details?.reason}</p>
         {details?.suggestion ? (
-          <p className="mt-2 text-zinc-700 dark:text-zinc-300">{details.suggestion}</p>
+          <p className="mt-2 text-muted">{details.suggestion}</p>
         ) : null}
       </section>
     );
@@ -37,10 +43,13 @@ export default function OptionCards({ result, chosen, onChoose, calendarHintId }
   if (chosen) {
     return (
       <section aria-labelledby={headingId} className="min-w-0">
-        <h3 id={headingId} className="text-xl font-semibold">
+        <h3 id={headingId} className="text-xl font-semibold text-ink">
           {name}
         </h3>
-        <p role="status" className="mt-2 rounded-lg border border-emerald-700 bg-emerald-50 px-3 py-3 text-sm text-emerald-950 dark:border-emerald-400 dark:bg-emerald-950/40 dark:text-emerald-100">
+        <p
+          role="status"
+          className="mt-3 border-l-4 border-l-primary bg-primary-tint px-4 py-3 text-sm text-callout"
+        >
           {chosenSummary(name, chosen)}
         </p>
       </section>
@@ -49,30 +58,38 @@ export default function OptionCards({ result, chosen, onChoose, calendarHintId }
 
   const activity = activityById(result.activityId);
   const options = visibleOptions(result.options);
+  const ordered = [...options].sort((a, b) => {
+    const aRec = cardTone(a.labels) === "recommended" ? 0 : 1;
+    const bRec = cardTone(b.labels) === "recommended" ? 0 : 1;
+    return aRec - bRec;
+  });
 
   return (
     <section aria-labelledby={headingId} className="min-w-0">
-      <h3 id={headingId} className="text-xl font-semibold">
+      <h3 id={headingId} className="text-xl font-semibold text-ink">
         {name}
       </h3>
-      {activity && options.length > 0 ? (
-        <ul className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {options.map((option) => (
-            <li
-              key={`${option.start}-${option.end}-${option.labels.join("-")}`}
-              className="min-w-0"
-            >
-              <OptionCard
-                activity={activity}
-                option={option}
-                onChoose={() => onChoose(option)}
-                calendarHintId={calendarHintId}
-              />
-            </li>
-          ))}
+      {activity && ordered.length > 0 ? (
+        <ul className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {ordered.map((option) => {
+            const recommended = cardTone(option.labels) === "recommended";
+            return (
+              <li
+                key={`${option.start}-${option.end}-${option.labels.join("-")}`}
+                className={`min-w-0 ${recommended ? "sm:col-span-2" : ""}`}
+              >
+                <OptionCard
+                  activity={activity}
+                  option={option}
+                  onChoose={() => onChoose(option)}
+                  calendarHintId={calendarHintId}
+                />
+              </li>
+            );
+          })}
         </ul>
       ) : (
-        <p className="mt-2 text-zinc-700 dark:text-zinc-300">No choosable times for this activity.</p>
+        <p className="mt-2 text-muted">No choosable times for this activity.</p>
       )}
     </section>
   );

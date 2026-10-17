@@ -1,17 +1,26 @@
 import { ACTIVITY_CATALOG } from "../../lib/constants";
 import { mockGrid } from "../../lib/mocks/grid";
 import { mockScheduleResult } from "../../lib/mocks/schedule";
-import type { ActivityId, ActivityResult, OptionLabel, RunRecord } from "../../lib/types";
+import type {
+  ActivityId,
+  ActivityResult,
+  OptionLabel,
+  RunRecord,
+} from "../../lib/types";
 import { chosenRecordPreview } from "../option-cards/optionCardModel";
 
 function okResult(id: ActivityId): Extract<ActivityResult, { ok: true }> {
-  const result = mockScheduleResult.results.find((item) => item.activityId === id);
+  const result = mockScheduleResult.results.find(
+    (item) => item.activityId === id,
+  );
   if (!result || !result.ok) throw new Error(`expected ok result for ${id}`);
   return result;
 }
 
 function optionWith(id: ActivityId, label: OptionLabel) {
-  const found = okResult(id).options.find((option) => option.labels.includes(label));
+  const found = okResult(id).options.find((option) =>
+    option.labels.includes(label),
+  );
   if (!found) throw new Error(`expected ${label} option for ${id}`);
   return found;
 }

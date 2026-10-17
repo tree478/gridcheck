@@ -15,14 +15,27 @@ type Props = {
   onDelete: (id: string) => void;
 };
 
-export default function RunList({ rows, sort, onSort, onMarkDone, onDelete }: Props) {
+export default function RunList({
+  rows,
+  sort,
+  onSort,
+  onMarkDone,
+  onDelete,
+}: Props) {
   return (
     <section aria-labelledby="impact-runs-heading" className="mt-8 min-w-0">
-      <h2 id="impact-runs-heading" className="text-xl font-semibold">
+      <h2
+        id="impact-runs-heading"
+        className="text-lg font-semibold text-secondary"
+      >
         Runs
       </h2>
 
-      <div role="group" aria-label="Sort runs" className="mt-3 flex min-w-0 flex-wrap gap-2">
+      <div
+        role="group"
+        aria-label="Sort runs"
+        className="mt-3 flex min-w-0 flex-wrap gap-2"
+      >
         {SORT_OPTIONS.map((option) => {
           const selected = sort === option.id;
           return (
@@ -31,10 +44,10 @@ export default function RunList({ rows, sort, onSort, onMarkDone, onDelete }: Pr
               type="button"
               onClick={() => onSort(option.id)}
               aria-pressed={selected}
-              className={`min-h-11 rounded-lg border px-4 text-sm ${FOCUS_RING} ${
+              className={`min-h-11 px-3 text-sm ${FOCUS_RING} ${
                 selected
-                  ? "border-zinc-800 font-semibold text-zinc-900 dark:border-zinc-200 dark:text-zinc-50"
-                  : "border-zinc-300 font-medium text-zinc-700 dark:border-zinc-700 dark:text-zinc-300"
+                  ? "font-semibold text-ink underline decoration-primary underline-offset-4"
+                  : "font-medium text-muted hover:text-ink"
               }`}
             >
               {option.label}
@@ -44,11 +57,16 @@ export default function RunList({ rows, sort, onSort, onMarkDone, onDelete }: Pr
       </div>
 
       {rows.length === 0 ? (
-        <p className="mt-4 text-zinc-700 dark:text-zinc-300">No runs in this list.</p>
+        <p className="mt-4 text-secondary">No runs in this list.</p>
       ) : (
         <ol className="mt-4 space-y-3">
           {rows.map((row) => (
-            <RunRow key={row.run.id} row={row} onMarkDone={onMarkDone} onDelete={onDelete} />
+            <RunRow
+              key={row.run.id}
+              row={row}
+              onMarkDone={onMarkDone}
+              onDelete={onDelete}
+            />
           ))}
         </ol>
       )}

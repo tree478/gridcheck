@@ -14,7 +14,9 @@ export type LoginErrors = {
   password?: string;
 };
 
-export const MOCK_EXISTING_USERNAMES: readonly Profile["username"][] = ["guest"];
+export const MOCK_EXISTING_USERNAMES: readonly Profile["username"][] = [
+  "guest",
+];
 
 export function defaultLoginState(): LoginFormState {
   return {
@@ -36,8 +38,7 @@ export function validateLogin(state: LoginFormState): LoginErrors {
 }
 
 export type MockLoginResult =
-  | { ok: true; username: Profile["username"] }
-  | { ok: false; error: "wrong" };
+  { ok: true; username: Profile["username"] } | { ok: false; error: "wrong" };
 
 export function mockLogin(
   username: Profile["username"],

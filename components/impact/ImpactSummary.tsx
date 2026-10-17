@@ -1,17 +1,19 @@
 import { SCORE_BANDS } from "@/lib/constants";
 import type { ScoreBand } from "@/lib/types";
 import { HINT_CLASS } from "@/components/planner/plannerStyles";
-import { formatMass, formatScore, modeledLabel, type ImpactTotals } from "./impactModel";
+import {
+  formatMass,
+  formatScore,
+  modeledLabel,
+  type ImpactTotals,
+} from "./impactModel";
 
 const BAND_TINT: Record<ScoreBand, string> = {
-  "Top choice": "text-emerald-800 dark:text-emerald-300",
-  Great: "text-teal-800 dark:text-teal-300",
-  OK: "text-sky-800 dark:text-sky-300",
-  "Could be cleaner": "text-amber-800 dark:text-amber-200",
+  "Top choice": "text-primary",
+  Great: "text-primary",
+  OK: "text-ink",
+  "Could be cleaner": "text-muted",
 };
-
-const CARD =
-  "rounded-xl border border-zinc-200 bg-white p-5 dark:border-zinc-800 dark:bg-zinc-900";
 
 type Props = { totals: ImpactTotals };
 
@@ -20,52 +22,55 @@ export default function ImpactSummary({ totals }: Props) {
 
   return (
     <section aria-labelledby="impact-summary-heading" className="min-w-0">
-      <h2 id="impact-summary-heading" className="text-xl font-semibold">
+      <h2 id="impact-summary-heading" className="sr-only">
         Overall
       </h2>
 
-      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <div className={CARD}>
-          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Overall score</p>
-          <p className={`mt-2 text-5xl font-bold tabular-nums ${BAND_TINT[totals.overallBand]}`}>
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 sm:gap-10">
+        <div>
+          <p className="text-sm font-medium text-muted">Overall score</p>
+          <p
+            className={`mt-2 text-6xl font-bold tabular-nums tracking-tight ${BAND_TINT[totals.overallBand]}`}
+          >
             {formatScore(totals.overallScore)}
           </p>
-          <p className="mt-1 text-base font-medium text-zinc-800 dark:text-zinc-200">
+          <p className="mt-1 text-base font-medium text-secondary">
             {totals.overallBand}
           </p>
         </div>
 
-        <div className={CARD}>
-          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-            CO₂ saved vs Soonest
-          </p>
-          <p className="mt-2 text-3xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
+        <div>
+          <p className="text-sm font-medium text-muted">CO₂ saved vs Soonest</p>
+          <p
+            className={`mt-2 text-4xl font-bold tabular-nums tracking-tight sm:text-5xl ${
+              totals.totalSavedGrams < 0 ? "text-error" : "text-ink"
+            }`}
+          >
             {formatMass(totals.totalSavedGrams)}
           </p>
           <p className={`mt-1 ${HINT_CLASS}`}>{modeledLabel("vs Soonest")}</p>
         </div>
+      </div>
 
-        <div className={CARD}>
-          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
-            Total modeled emissions
-          </p>
-          <p className="mt-2 text-3xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
+      <div className="mt-8 flex flex-wrap gap-x-8 gap-y-4 border-t border-border pt-6 text-sm">
+        <div>
+          <p className="text-muted">Total modeled emissions</p>
+          <p className="mt-1 text-xl font-semibold tabular-nums text-ink">
             {formatMass(totals.totalModeledGrams)}
           </p>
-          <p className={`mt-1 ${HINT_CLASS}`}>{modeledLabel("CO₂")}</p>
+          <p className={`mt-0.5 ${HINT_CLASS}`}>{modeledLabel("CO₂")}</p>
         </div>
-
-        <div className={CARD}>
-          <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">Runs</p>
-          <p className="mt-2 text-3xl font-bold tabular-nums text-zinc-950 dark:text-zinc-50">
+        <div>
+          <p className="text-muted">Runs</p>
+          <p className="mt-1 text-xl font-semibold tabular-nums text-ink">
             {totals.runCount}
           </p>
-          <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{runLabel} on this device</p>
+          <p className="mt-0.5 text-xs text-muted">{runLabel} on this device</p>
         </div>
       </div>
 
-      <h3 className="mt-6 text-sm font-semibold text-zinc-800 dark:text-zinc-200">Band breakdown</h3>
-      <ul className="mt-2 space-y-1 text-sm text-zinc-800 dark:text-zinc-200">
+      <h3 className="mt-6 text-sm font-medium text-muted">Band breakdown</h3>
+      <ul className="mt-2 space-y-1 text-sm text-muted">
         {SCORE_BANDS.map(({ band }) => (
           <li key={band}>
             {totals.bandBreakdown[band]} × {band}

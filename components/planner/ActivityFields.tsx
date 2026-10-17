@@ -1,25 +1,29 @@
 "use client";
 
 import { SLOT_MINUTES } from "@/lib/constants";
-import type { ActivityId, AttentionType } from "@/lib/types";
-import { errorKey, type ActivityFormState, type PlannerErrors } from "./plannerModel";
+import type { ActivityId } from "@/lib/types";
+import { activityDisplayName } from "@/components/schedule-grid/overlays";
+import {
+  errorKey,
+  type ActivityFormState,
+  type PlannerErrors,
+} from "./plannerModel";
 import {
   CHECKBOX_CLASS,
   ERROR_CLASS,
-  HINT_CLASS,
   INPUT_CLASS,
   INPUT_ERROR,
   INPUT_OK,
-  LABEL_CLASS,
 } from "./plannerStyles";
 
-const ATTENTION_TEXT: Record<AttentionType, string> = {
-  start: "You're needed at the start",
-  startEnd: "You're needed at the start and the end",
-  throughout: "You're needed the whole time",
-};
+const FIELD_LABEL = "block text-base font-medium text-ink";
 
-type Patch = Partial<Pick<ActivityFormState, "selected" | "durationMin" | "energyKwh" | "delayStart">>;
+type Patch = Partial<
+  Pick<
+    ActivityFormState,
+    "selected" | "durationMin" | "energyKwh" | "delayStart"
+  >
+>;
 
 type Props = {
   baseId: string;
@@ -28,17 +32,23 @@ type Props = {
   onChange: (id: ActivityId, patch: Patch) => void;
 };
 
-export default function ActivityFields({ baseId, items, errors, onChange }: Props) {
+export default function ActivityFields({
+  baseId,
+  items,
+  errors,
+  onChange,
+}: Props) {
   const groupError = errors[errorKey.activities];
   const groupErrorId = `${baseId}-activities-error`;
 
+  // Catalog still has EV + laptop; planner shows one "Device charging" (ev).
+  const visibleItems = items.filter((item) => item.activity.id !== "laptop");
+
   return (
     <fieldset aria-describedby={groupError ? groupErrorId : undefined}>
-      <legend className="text-base font-semibold">What do you want to run?</legend>
-      <p className={`mt-1 ${HINT_CLASS}`}>
-        Pick one or more. Defaults come from typical appliance values; edit them to match yours. Energy is per cycle,
-        in kWh.
-      </p>
+      <legend className="text-xl font-semibold tracking-tight text-ink">
+        What do you want to run?
+      </legend>
       {groupError && (
         <p id={groupErrorId} role="alert" className={ERROR_CLASS}>
           {groupError}
@@ -46,7 +56,7 @@ export default function ActivityFields({ baseId, items, errors, onChange }: Prop
       )}
 
       <ul className="mt-3 grid gap-3 sm:grid-cols-2">
-        {items.map((item) => {
+        {visibleItems.map((item) => {
           const { activity } = item;
           const id = activity.id;
           const checkboxId = `${baseId}-act-${id}`;
@@ -59,32 +69,32 @@ export default function ActivityFields({ baseId, items, errors, onChange }: Prop
           return (
             <li
               key={id}
-              className={`rounded-xl border p-3 ${
+              className={`rounded-[var(--radius-card)] border p-3 ${
                 item.selected
-                  ? "border-emerald-600 bg-emerald-50 dark:border-emerald-400 dark:bg-emerald-950/30"
-                  : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+                  ? "border-primary bg-primary-tint"
+                  : "border-border bg-surface"
               }`}
             >
-              <label htmlFor={checkboxId} className="flex min-h-11 cursor-pointer items-start gap-3">
+              <label
+                htmlFor={checkboxId}
+                className="flex min-h-11 cursor-pointer items-center gap-3"
+              >
                 <input
                   id={checkboxId}
                   type="checkbox"
                   checked={item.selected}
                   onChange={(e) => onChange(id, { selected: e.target.checked })}
-                  className={`mt-1 ${CHECKBOX_CLASS}`}
+                  className={CHECKBOX_CLASS}
                 />
-                <span className="min-w-0">
-                  <span className="block font-medium">{activity.name}</span>
-                  <span className={`block ${HINT_CLASS}`}>
-                    {activity.defaultDurationMin} min · {activity.defaultEnergyKwh} kWh · {ATTENTION_TEXT[activity.attention]}
-                  </span>
+                <span className="min-w-0 text-lg font-semibold text-ink">
+                  {activityDisplayName(id)}
                 </span>
               </label>
 
               {item.selected && (
                 <div className="mt-3 grid grid-cols-2 gap-3">
                   <div>
-                    <label htmlFor={durationId} className={LABEL_CLASS}>
+                    <label htmlFor={durationId} className={FIELD_LABEL}>
                       Duration (min)
                     </label>
                     <input
@@ -94,9 +104,13 @@ export default function ActivityFields({ baseId, items, errors, onChange }: Prop
                       min={SLOT_MINUTES}
                       step={SLOT_MINUTES}
                       value={item.durationMin}
-                      onChange={(e) => onChange(id, { durationMin: e.target.value })}
+                      onChange={(e) =>
+                        onChange(id, { durationMin: e.target.value })
+                      }
                       aria-invalid={durationError ? true : undefined}
-                      aria-describedby={durationError ? `${durationId}-error` : undefined}
+                      aria-describedby={
+                        durationError ? `${durationId}-error` : undefined
+                      }
                       className={`mt-1 ${INPUT_CLASS} ${durationError ? INPUT_ERROR : INPUT_OK}`}
                     />
                     {durationError && (
@@ -106,7 +120,7 @@ export default function ActivityFields({ baseId, items, errors, onChange }: Prop
                     )}
                   </div>
                   <div>
-                    <label htmlFor={energyId} className={LABEL_CLASS}>
+                    <label htmlFor={energyId} className={FIELD_LABEL}>
                       Energy (kWh)
                     </label>
                     <input
@@ -116,9 +130,13 @@ export default function ActivityFields({ baseId, items, errors, onChange }: Prop
                       min={0}
                       step="0.01"
                       value={item.energyKwh}
-                      onChange={(e) => onChange(id, { energyKwh: e.target.value })}
+                      onChange={(e) =>
+                        onChange(id, { energyKwh: e.target.value })
+                      }
                       aria-invalid={energyError ? true : undefined}
-                      aria-describedby={energyError ? `${energyId}-error` : undefined}
+                      aria-describedby={
+                        energyError ? `${energyId}-error` : undefined
+                      }
                       className={`mt-1 ${INPUT_CLASS} ${energyError ? INPUT_ERROR : INPUT_OK}`}
                     />
                     {energyError && (
@@ -129,19 +147,21 @@ export default function ActivityFields({ baseId, items, errors, onChange }: Prop
                   </div>
 
                   {activity.supportsDelayStart && (
-                    <label htmlFor={delayId} className="col-span-2 flex min-h-11 cursor-pointer items-center gap-3">
+                    <label
+                      htmlFor={delayId}
+                      className="col-span-2 flex min-h-11 cursor-pointer items-center gap-3"
+                    >
                       <input
                         id={delayId}
                         type="checkbox"
                         checked={item.delayStart}
-                        onChange={(e) => onChange(id, { delayStart: e.target.checked })}
+                        onChange={(e) =>
+                          onChange(id, { delayStart: e.target.checked })
+                        }
                         className={CHECKBOX_CLASS}
                       />
-                      <span className="text-sm">
-                        <span className="font-medium">Use delay-start</span>
-                        <span className={`block ${HINT_CLASS}`}>
-                          Load it when you&apos;re free; the appliance starts itself later.
-                        </span>
+                      <span className="text-base font-medium">
+                        Use delay-start
                       </span>
                     </label>
                   )}

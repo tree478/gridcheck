@@ -22,7 +22,9 @@ export type ImpactTotals = {
   bandBreakdown: Record<ScoreBand, number>;
 };
 
-export function runScore(run: Pick<RunRecord, "chosenGrams" | "bestGrams" | "worstGrams">): number {
+export function runScore(
+  run: Pick<RunRecord, "chosenGrams" | "bestGrams" | "worstGrams">,
+): number {
   const { chosenGrams, bestGrams, worstGrams } = run;
   if (worstGrams <= bestGrams) return 100;
   // Same 3% relative margin C4 uses for Recommended near-ties (PRD F15 / NEAR_TIE_MARGIN).
@@ -59,7 +61,8 @@ export function sortRuns(rows: ScoredRun[], mode: SortMode): ScoredRun[] {
   } else {
     copy.sort((a, b) => {
       if (a.score !== b.score) return b.score - a.score;
-      if (a.run.start !== b.run.start) return a.run.start < b.run.start ? 1 : -1;
+      if (a.run.start !== b.run.start)
+        return a.run.start < b.run.start ? 1 : -1;
       return 0;
     });
   }
@@ -70,12 +73,17 @@ export function impactTotals(runs: RunRecord[]): ImpactTotals {
   const rows = scoredRuns(runs);
   const totalKwh = runs.reduce((sum, run) => sum + run.kwh, 0);
   const overallScore =
-    totalKwh === 0 ? 0 : rows.reduce((sum, row) => sum + row.score * row.run.kwh, 0) / totalKwh;
+    totalKwh === 0
+      ? 0
+      : rows.reduce((sum, row) => sum + row.score * row.run.kwh, 0) / totalKwh;
 
   return {
     overallScore,
     overallBand: bandForScore(overallScore),
-    totalSavedGrams: runs.reduce((sum, run) => sum + (run.soonestGrams - run.chosenGrams), 0),
+    totalSavedGrams: runs.reduce(
+      (sum, run) => sum + (run.soonestGrams - run.chosenGrams),
+      0,
+    ),
     totalModeledGrams: runs.reduce((sum, run) => sum + run.chosenGrams, 0),
     runCount: runs.length,
     bandBreakdown: bandBreakdown(rows),
@@ -95,10 +103,15 @@ export function formatScore(score: number): string {
 }
 
 export function modeledLabel(text: string): string {
-  return text.includes("modeled estimate") ? text : `${text} (modeled estimate)`;
+  return text.includes("modeled estimate")
+    ? text
+    : `${text} (modeled estimate)`;
 }
 
-export function formatRunDate(iso: string, timeZone: string = TIMEZONE): string {
+export function formatRunDate(
+  iso: string,
+  timeZone: string = TIMEZONE,
+): string {
   return new Intl.DateTimeFormat("en-US", {
     timeZone,
     weekday: "short",
@@ -126,12 +139,14 @@ function bandBreakdown(rows: ScoredRun[]): Record<ScoreBand, number> {
 function compareSustainable(a: ScoredRun, b: ScoredRun): number {
   if (a.score !== b.score) return b.score - a.score;
   if (a.run.start !== b.run.start) return a.run.start < b.run.start ? 1 : -1;
-  if (a.run.createdAt !== b.run.createdAt) return a.run.createdAt < b.run.createdAt ? 1 : -1;
+  if (a.run.createdAt !== b.run.createdAt)
+    return a.run.createdAt < b.run.createdAt ? 1 : -1;
   return 0;
 }
 
 function compareRecent(a: ScoredRun, b: ScoredRun): number {
   if (a.run.start !== b.run.start) return a.run.start < b.run.start ? 1 : -1;
-  if (a.run.createdAt !== b.run.createdAt) return a.run.createdAt < b.run.createdAt ? 1 : -1;
+  if (a.run.createdAt !== b.run.createdAt)
+    return a.run.createdAt < b.run.createdAt ? 1 : -1;
   return 0;
 }

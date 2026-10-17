@@ -1,26 +1,113 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #12201c;
+  --text-2: #3f4d47;
+  --text-muted: #4a5752;
+  --text-callout: #2e3b36;
+  --bg: #f3f5f1;
+  --surface: #ffffff;
+  --border: #dce3da;
+  --divider-mobile: #c9d2c7;
+  --input-border: #b9c3b7;
+
+  --primary: #115e59;
+  --primary-hover: #0c4a46;
+  --primary-tint: #e4efea;
+  --chip: #eef0ea;
+
+  --scale-clean: #115e59;
+  --scale-mid: #b7bdaf;
+  --scale-dirty: #f2994a;
+
+  --error: #b42318;
+  --error-tint: #fdecea;
+  --busy: #cbd1c9;
+  --sleep: #d5dce6;
+
+  --radius-card: 18px;
+  --radius-input: 10px;
+  --radius-button: 12px;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-archivo), system-ui, sans-serif;
+  --font-mono: var(--font-ibm-plex-mono), ui-monospace, monospace;
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-ink: var(--ink);
+  --color-secondary: var(--text-2);
+  --color-muted: var(--text-muted);
+  --color-callout: var(--text-callout);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-border: var(--border);
+  --color-divider: var(--divider-mobile);
+  --color-input: var(--input-border);
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-tint: var(--primary-tint);
+  --color-chip: var(--chip);
+  --color-scale-clean: var(--scale-clean);
+  --color-scale-mid: var(--scale-mid);
+  --color-scale-dirty: var(--scale-dirty);
+  --color-error: var(--error);
+  --color-error-tint: var(--error-tint);
+  --color-busy: var(--busy);
+  --color-sleep: var(--sleep);
+
+  /* Type scale: mobile base; pair with md: text-*-desktop where needed */
+  --text-h1: 2.375rem;
+  --text-h1--line-height: 1.1;
+  --text-h1--font-weight: 800;
+  --text-h1-desktop: 3.75rem;
+  --text-h1-desktop--line-height: 1.1;
+  --text-h1-desktop--font-weight: 800;
+
+  --text-display: 3.25rem;
+  --text-display--line-height: 1;
+  --text-display--font-weight: 800;
+  --text-display-desktop: 4rem;
+  --text-display-desktop--line-height: 1;
+  --text-display-desktop--font-weight: 800;
+
+  --text-h2: 1.375rem;
+  --text-h2--line-height: 1.2;
+  --text-h2--font-weight: 800;
+  --text-h2-desktop: 1.75rem;
+  --text-h2-desktop--line-height: 1.2;
+  --text-h2-desktop--font-weight: 800;
+
+  --text-h3: 1rem;
+  --text-h3--line-height: 1.3;
+  --text-h3--font-weight: 700;
+  --text-h3-desktop: 1.125rem;
+  --text-h3-desktop--line-height: 1.3;
+  --text-h3-desktop--font-weight: 700;
+
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.5;
+  --text-body-desktop: 1rem;
+  --text-body-desktop--line-height: 1.5;
+
+  --text-btn: 1.125rem;
+  --text-btn--line-height: 1.2;
+  --text-btn--font-weight: 700;
+
+  --text-caption: 0.6875rem;
+  --text-caption--line-height: 1.4;
+  --text-caption-desktop: 0.75rem;
+  --text-caption-desktop--line-height: 1.4;
+
+  --text-mono-label: 0.625rem;
+  --text-mono-label--line-height: 1.3;
+  --text-mono-label--font-weight: 500;
+  --text-mono-label-desktop: 0.6875rem;
+  --text-mono-label-desktop--line-height: 1.3;
+  --text-mono-label-desktop--font-weight: 500;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-archivo), system-ui, sans-serif;
 }

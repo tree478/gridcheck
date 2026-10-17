@@ -16,7 +16,9 @@ export type SignupErrors = {
   terms?: string;
 };
 
-export const MOCK_EXISTING_USERNAMES: readonly Profile["username"][] = ["guest"];
+export const MOCK_EXISTING_USERNAMES: readonly Profile["username"][] = [
+  "guest",
+];
 
 export function defaultSignupState(): SignupFormState {
   return {
@@ -42,8 +44,7 @@ export function validateSignup(state: SignupFormState): SignupErrors {
 }
 
 export type MockCreateResult =
-  | { ok: true; username: Profile["username"] }
-  | { ok: false; error: "taken" };
+  { ok: true; username: Profile["username"] } | { ok: false; error: "taken" };
 
 export function mockCreateProfile(
   username: Profile["username"],

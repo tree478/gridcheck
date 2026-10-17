@@ -10,7 +10,11 @@ import type {
   ScheduleOption,
   Tier,
 } from "../../lib/types";
-import { formatClock, formatOptionLabels } from "../schedule-grid/overlays";
+import {
+  activityDisplayName,
+  formatClock,
+  formatOptionLabels,
+} from "../schedule-grid/overlays";
 
 export const DIVERSITY_EXPLANATION =
   "Several times are nearly as clean. We spread users across them so we don't create a new peak.";
@@ -29,7 +33,7 @@ export function activityById(id: ActivityId): Activity | undefined {
 }
 
 export function activityName(id: ActivityId): string {
-  return activityById(id)?.name ?? id;
+  return activityDisplayName(id);
 }
 
 /** Drop Worst — it is scoring-only (PRD §12 #8). */
@@ -44,14 +48,19 @@ export function cardTitle(labels: OptionLabel[]): string {
   return merged;
 }
 
-export function cardTone(labels: OptionLabel[]): "recommended" | "greenest" | "soonest" | "alternative" {
+export function cardTone(
+  labels: OptionLabel[],
+): "recommended" | "greenest" | "soonest" | "alternative" {
   if (labels.includes("recommended")) return "recommended";
   if (labels.includes("greenest")) return "greenest";
   if (labels.includes("soonest")) return "soonest";
   return "alternative";
 }
 
-export function attentionLines(activity: Activity, option: ScheduleOption): string[] {
+export function attentionLines(
+  activity: Activity,
+  option: ScheduleOption,
+): string[] {
   const lines = [ATTENTION_TEXT[activity.attention]];
   if (option.loadAt) {
     lines.push(`Load at ${formatClock(option.loadAt)}`);
@@ -82,8 +91,14 @@ export function confidenceLabel(tier: Tier): string {
   return "Measured";
 }
 
-export function formatWeekday(iso: string, timeZone: string = TIMEZONE): string {
-  return new Intl.DateTimeFormat("en-US", { timeZone, weekday: "short" }).format(new Date(iso));
+export function formatWeekday(
+  iso: string,
+  timeZone: string = TIMEZONE,
+): string {
+  return new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    weekday: "short",
+  }).format(new Date(iso));
 }
 
 export function formatWindow(startIso: string, endIso: string): string {
@@ -110,7 +125,9 @@ export function noWindowDetails(result: ActivityResult): {
 }
 
 export function hasRecommendedCard(options: ScheduleOption[]): boolean {
-  return visibleOptions(options).some((option) => option.labels.includes("recommended"));
+  return visibleOptions(options).some((option) =>
+    option.labels.includes("recommended"),
+  );
 }
 
 export function chosenRecordPreview(input: {

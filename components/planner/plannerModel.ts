@@ -1,7 +1,18 @@
 // Pure, framework-free helpers for the planner form (T-B2).
 // Relative imports (not "@/") so Vitest can resolve them without an alias.
-import { ACTIVITY_CATALOG, MAX_HORIZON_DAYS, SLOT_MINUTES, TIMEZONE } from "../../lib/constants";
-import type { Activity, BusyBlock, HourIntensity, PlannedActivity, ScheduleRequest } from "../../lib/types";
+import {
+  ACTIVITY_CATALOG,
+  MAX_HORIZON_DAYS,
+  SLOT_MINUTES,
+  TIMEZONE,
+} from "../../lib/constants";
+import type {
+  Activity,
+  BusyBlock,
+  HourIntensity,
+  PlannedActivity,
+  ScheduleRequest,
+} from "../../lib/types";
 
 export const MINUTE_MS = 60 * 1000;
 export const DAY_MS = 24 * 60 * MINUTE_MS;
@@ -56,7 +67,10 @@ export function activityFromCatalog(activity: Activity): ActivityFormState {
 }
 
 /** Pre-filled state: every catalog activity with its defaults, no busy blocks, demo deadline (Thursday 9 PM). */
-export function defaultFormState(nowIso: string, timeZone: string = TIMEZONE): PlannerFormState {
+export function defaultFormState(
+  nowIso: string,
+  timeZone: string = TIMEZONE,
+): PlannerFormState {
   return {
     activities: ACTIVITY_CATALOG.map(activityFromCatalog),
     busy: [],
@@ -68,7 +82,10 @@ export function defaultFormState(nowIso: string, timeZone: string = TIMEZONE): P
  * The PRD §4 demo deadline: the next Thursday at 9:00 PM in the given zone that is after `now`.
  * Always within MAX_HORIZON_DAYS. Returns "" if `now` is unreadable.
  */
-export function defaultDeadlineLocal(nowIso: string, timeZone: string = TIMEZONE): string {
+export function defaultDeadlineLocal(
+  nowIso: string,
+  timeZone: string = TIMEZONE,
+): string {
   const nowMs = Date.parse(nowIso);
   if (!Number.isFinite(nowMs)) return "";
   const today = localParts(nowMs, timeZone);
@@ -84,7 +101,11 @@ export function defaultDeadlineLocal(nowIso: string, timeZone: string = TIMEZONE
 }
 
 /** Converts stored blocks (ISO with offset) into editable form blocks. Keys are stable per index. */
-export function busyBlocksToForm(blocks: BusyBlock[], keyPrefix = "demo", timeZone: string = TIMEZONE): BusyFormBlock[] {
+export function busyBlocksToForm(
+  blocks: BusyBlock[],
+  keyPrefix = "demo",
+  timeZone: string = TIMEZONE,
+): BusyFormBlock[] {
   return blocks.map((b, i) => ({
     key: `${keyPrefix}-${i}`,
     startLocal: isoToLocal(b.start, timeZone) ?? "",
@@ -100,7 +121,14 @@ export function emptyBusyBlock(key: string): BusyFormBlock {
 
 // ---------- Time zone math (Intl only, never the machine's local zone) ----------
 
-type LocalParts = { year: number; month: number; day: number; hour: number; minute: number; second: number };
+type LocalParts = {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+};
 
 const partsFormatters = new Map<string, Intl.DateTimeFormat>();
 function partsFormatter(timeZone: string): Intl.DateTimeFormat {
@@ -123,7 +151,8 @@ function partsFormatter(timeZone: string): Intl.DateTimeFormat {
 
 function localParts(ms: number, timeZone: string): LocalParts {
   const parts = partsFormatter(timeZone).formatToParts(new Date(ms));
-  const get = (type: Intl.DateTimeFormatPartTypes) => Number(parts.find((p) => p.type === type)?.value);
+  const get = (type: Intl.DateTimeFormatPartTypes) =>
+    Number(parts.find((p) => p.type === type)?.value);
   return {
     year: get("year"),
     month: get("month"),
@@ -138,7 +167,9 @@ function localParts(ms: number, timeZone: string): LocalParts {
 function zoneOffsetMs(ms: number, timeZone: string): number {
   const whole = Math.floor(ms / 1000) * 1000;
   const p = localParts(whole, timeZone);
-  return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - whole;
+  return (
+    Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - whole
+  );
 }
 
 const weekdayFormatters = new Map<string, Intl.DateTimeFormat>();
@@ -169,7 +200,11 @@ export function parseLocalInput(local: string): LocalParts | null {
   };
   if (p.hour > 23 || p.minute > 59 || p.second > 59) return null;
   const check = new Date(Date.UTC(p.year, p.month - 1, p.day));
-  if (check.getUTCFullYear() !== p.year || check.getUTCMonth() !== p.month - 1 || check.getUTCDate() !== p.day) {
+  if (
+    check.getUTCFullYear() !== p.year ||
+    check.getUTCMonth() !== p.month - 1 ||
+    check.getUTCDate() !== p.day
+  ) {
     return null;
   }
   return p;
@@ -191,14 +226,26 @@ function partsEqual(a: LocalParts, b: LocalParts): boolean {
  * DST rules: in a fall-back overlap the earlier instant wins; a spring-forward gap shifts forward
  * to the first real instant. Returns null for malformed input.
  */
-export function localToMs(local: string, timeZone: string = TIMEZONE): number | null {
+export function localToMs(
+  local: string,
+  timeZone: string = TIMEZONE,
+): number | null {
   const p = parseLocalInput(local);
   if (!p) return null;
-  const guess = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
+  const guess = Date.UTC(
+    p.year,
+    p.month - 1,
+    p.day,
+    p.hour,
+    p.minute,
+    p.second,
+  );
   const first = guess - zoneOffsetMs(guess, timeZone);
   const second = guess - zoneOffsetMs(first, timeZone);
   const candidates = [...new Set([first, second])].sort((a, b) => a - b);
-  const matching = candidates.filter((ms) => partsEqual(localParts(ms, timeZone), p));
+  const matching = candidates.filter((ms) =>
+    partsEqual(localParts(ms, timeZone), p),
+  );
   if (matching.length > 0) return matching[0];
   return candidates[candidates.length - 1];
 }
@@ -216,13 +263,19 @@ export function msToIso(ms: number, timeZone: string = TIMEZONE): string {
 }
 
 /** `datetime-local` value (zone wall time) → ISO with offset. Null for malformed input. */
-export function localToIso(local: string, timeZone: string = TIMEZONE): string | null {
+export function localToIso(
+  local: string,
+  timeZone: string = TIMEZONE,
+): string | null {
   const ms = localToMs(local, timeZone);
   return ms === null ? null : msToIso(ms, timeZone);
 }
 
 /** ISO instant → `datetime-local` value ("YYYY-MM-DDTHH:mm") in the zone. Null if unreadable. */
-export function isoToLocal(iso: string, timeZone: string = TIMEZONE): string | null {
+export function isoToLocal(
+  iso: string,
+  timeZone: string = TIMEZONE,
+): string | null {
   const ms = Date.parse(iso);
   if (!Number.isFinite(ms)) return null;
   const p = localParts(ms, timeZone);
@@ -256,7 +309,10 @@ export function formatLocal(iso: string, timeZone: string = TIMEZONE): string {
 }
 
 /** Latest allowed deadline for `now`, as an ISO string. */
-export function maxDeadlineIso(nowIso: string, timeZone: string = TIMEZONE): string | null {
+export function maxDeadlineIso(
+  nowIso: string,
+  timeZone: string = TIMEZONE,
+): string | null {
   const nowMs = Date.parse(nowIso);
   if (!Number.isFinite(nowMs)) return null;
   return msToIso(nowMs + MAX_HORIZON_DAYS * DAY_MS, timeZone);
@@ -271,7 +327,11 @@ function parsePositive(input: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-export function validatePlanner(state: PlannerFormState, nowIso: string, timeZone: string = TIMEZONE): PlannerErrors {
+export function validatePlanner(
+  state: PlannerFormState,
+  nowIso: string,
+  timeZone: string = TIMEZONE,
+): PlannerErrors {
   const errors: PlannerErrors = {};
 
   const selected = state.activities.filter((a) => a.selected);
@@ -280,12 +340,17 @@ export function validatePlanner(state: PlannerFormState, nowIso: string, timeZon
   }
   for (const a of selected) {
     const duration = parsePositive(a.durationMin);
-    if (duration === null || !Number.isInteger(duration) || duration % SLOT_MINUTES !== 0) {
+    if (
+      duration === null ||
+      !Number.isInteger(duration) ||
+      duration % SLOT_MINUTES !== 0
+    ) {
       errors[errorKey.duration(a.activity.id)] =
         `Enter a duration in whole minutes, in steps of ${SLOT_MINUTES} (for example ${a.activity.defaultDurationMin}).`;
     }
     if (parsePositive(a.energyKwh) === null) {
-      errors[errorKey.energy(a.activity.id)] = "Enter the energy per cycle in kWh, greater than 0.";
+      errors[errorKey.energy(a.activity.id)] =
+        "Enter the energy per cycle in kWh, greater than 0.";
     }
   }
 
@@ -293,18 +358,24 @@ export function validatePlanner(state: PlannerFormState, nowIso: string, timeZon
     const startMs = b.startLocal ? localToMs(b.startLocal, timeZone) : null;
     const endMs = b.endLocal ? localToMs(b.endLocal, timeZone) : null;
     if (startMs === null) {
-      errors[errorKey.busyStart(b.key)] = b.startLocal ? "That start time couldn't be read." : "Enter a start time.";
+      errors[errorKey.busyStart(b.key)] = b.startLocal
+        ? "That start time couldn't be read."
+        : "Enter a start time.";
     }
     if (endMs === null) {
-      errors[errorKey.busyEnd(b.key)] = b.endLocal ? "That end time couldn't be read." : "Enter an end time.";
+      errors[errorKey.busyEnd(b.key)] = b.endLocal
+        ? "That end time couldn't be read."
+        : "Enter an end time.";
     } else if (startMs !== null && endMs <= startMs) {
-      errors[errorKey.busyEnd(b.key)] = "The end time needs to be after the start time.";
+      errors[errorKey.busyEnd(b.key)] =
+        "The end time needs to be after the start time.";
     }
   }
 
   const nowMs = Date.parse(nowIso);
   if (!Number.isFinite(nowMs)) {
-    errors[errorKey.deadline] = "We couldn't tell what time it is right now, so the deadline can't be checked.";
+    errors[errorKey.deadline] =
+      "We couldn't tell what time it is right now, so the deadline can't be checked.";
   } else if (!state.deadlineLocal) {
     errors[errorKey.deadline] = "Choose a deadline.";
   } else {
@@ -313,7 +384,8 @@ export function validatePlanner(state: PlannerFormState, nowIso: string, timeZon
     if (deadlineMs === null) {
       errors[errorKey.deadline] = "That deadline couldn't be read.";
     } else if (deadlineMs <= nowMs) {
-      errors[errorKey.deadline] = `The deadline needs to be after now (${formatLocal(nowIso, timeZone)}).`;
+      errors[errorKey.deadline] =
+        `The deadline needs to be after now (${formatLocal(nowIso, timeZone)}).`;
     } else if (deadlineMs > maxMs) {
       errors[errorKey.deadline] =
         `Deadlines can be at most ${MAX_HORIZON_DAYS} days out (by ${formatLocal(msToIso(maxMs, timeZone), timeZone)}).`;
@@ -332,9 +404,13 @@ export type BuildContext = {
   timeZone?: string;
 };
 
-export type BuildResult = { ok: true; request: ScheduleRequest } | { ok: false; errors: PlannerErrors };
+export type BuildResult =
+  { ok: true; request: ScheduleRequest } | { ok: false; errors: PlannerErrors };
 
-export function buildScheduleRequest(state: PlannerFormState, ctx: BuildContext): BuildResult {
+export function buildScheduleRequest(
+  state: PlannerFormState,
+  ctx: BuildContext,
+): BuildResult {
   const timeZone = ctx.timeZone ?? TIMEZONE;
   const errors = validatePlanner(state, ctx.now, timeZone);
   if (Object.keys(errors).length > 0) return { ok: false, errors };

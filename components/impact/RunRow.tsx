@@ -1,5 +1,12 @@
-import { HINT_CLASS, PRIMARY_BUTTON, SECONDARY_BUTTON } from "@/components/planner/plannerStyles";
-import { activityName, formatWindow } from "@/components/option-cards/optionCardModel";
+import {
+  HINT_CLASS,
+  PRIMARY_BUTTON,
+  SECONDARY_BUTTON,
+} from "@/components/planner/plannerStyles";
+import {
+  activityName,
+  formatWindow,
+} from "@/components/option-cards/optionCardModel";
 import {
   formatMass,
   formatRunDate,
@@ -28,8 +35,8 @@ export default function RunRow({ row, onMarkDone, onDelete }: Props) {
   const status = run.status === "done" ? "Done" : "Scheduled";
 
   return (
-    <li className="min-w-0 rounded-xl border border-zinc-200 bg-white p-4 dark:border-zinc-800 dark:bg-zinc-900">
-      <dl className="grid grid-cols-1 gap-2 text-sm text-zinc-800 dark:text-zinc-200 sm:grid-cols-2">
+    <li className="min-w-0 border-t border-border py-4">
+      <dl className="grid grid-cols-1 gap-2 text-sm text-secondary sm:grid-cols-2">
         <div>
           <dt className={HINT_CLASS}>Date</dt>
           <dd>
@@ -51,9 +58,15 @@ export default function RunRow({ row, onMarkDone, onDelete }: Props) {
         <div>
           <dt className={HINT_CLASS}>vs Soonest</dt>
           <dd>
-            {savedGrams < 0 ? <span className="sr-only">Dirtier than Soonest. </span> : null}
-            {savedGrams > 0 ? <span className="sr-only">Cleaner than Soonest. </span> : null}
-            {savedLine(savedGrams)}
+            {savedGrams < 0 ? (
+              <span className="sr-only">Dirtier than Soonest. </span>
+            ) : null}
+            {savedGrams > 0 ? (
+              <span className="sr-only">Cleaner than Soonest. </span>
+            ) : null}
+            <span className={savedGrams < 0 ? "text-error" : undefined}>
+              {savedLine(savedGrams)}
+            </span>
           </dd>
         </div>
         <div>

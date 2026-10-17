@@ -21,7 +21,8 @@ import {
   SECONDARY_BUTTON,
 } from "../planner/plannerStyles";
 
-const WRONG_MESSAGE = "That username or password does not match a profile on this device.";
+const WRONG_MESSAGE =
+  "That username or password does not match a profile on this device.";
 const RESET_MESSAGE =
   "Reset is a mock in this build. Nothing was deleted. Real reset lands when T-C8 exists.";
 
@@ -49,7 +50,8 @@ export default function LoginForm() {
   const forgotId = `${baseId}-forgot`;
 
   function patch(next: Partial<LoginFormState>) {
-    const editingContent = next.username !== undefined || next.password !== undefined;
+    const editingContent =
+      next.username !== undefined || next.password !== undefined;
     if (editingContent) {
       setLoggedInUsername(null);
       setFailure(null);
@@ -74,7 +76,9 @@ export default function LoginForm() {
       }
       setLoggedInUsername(result.username);
     } catch {
-      setFailure("Something went wrong. Please check the fields and try again.");
+      setFailure(
+        "Something went wrong. Please check the fields and try again.",
+      );
     }
   }
 
@@ -91,7 +95,7 @@ export default function LoginForm() {
       noValidate
       onSubmit={onSubmit}
       aria-label="Log in"
-      className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-900"
+      className="rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-sm sm:p-5"
     >
       <div className="space-y-5">
         <div>
@@ -127,7 +131,9 @@ export default function LoginForm() {
               value={state.password}
               onChange={(e) => patch({ password: e.target.value })}
               aria-invalid={passwordError ? true : undefined}
-              aria-describedby={passwordError ? `${passwordId}-error` : undefined}
+              aria-describedby={
+                passwordError ? `${passwordId}-error` : undefined
+              }
               className={`min-w-0 flex-1 basis-40 ${INPUT_CLASS} ${passwordError ? INPUT_ERROR : INPUT_OK}`}
             />
             <button
@@ -148,7 +154,7 @@ export default function LoginForm() {
         </div>
       </div>
 
-      <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+      <div className="mt-6 border-t border-border pt-4">
         {failure && (
           <p role="alert" className={`mb-3 ${ERROR_CLASS}`}>
             {failure}
@@ -162,7 +168,7 @@ export default function LoginForm() {
         <p className="mt-3">
           <Link
             href="/signup"
-            className={`inline-flex min-h-11 items-center text-sm font-medium text-zinc-800 underline underline-offset-2 hover:text-zinc-950 dark:text-zinc-200 dark:hover:text-zinc-50 ${FOCUS_RING}`}
+            className={`inline-flex min-h-11 items-center text-sm font-medium text-secondary underline underline-offset-2 hover:text-ink ${FOCUS_RING}`}
           >
             Sign up
           </Link>
@@ -173,8 +179,10 @@ export default function LoginForm() {
             type="button"
             aria-expanded={forgotStep !== "hidden"}
             aria-controls={forgotId}
-            onClick={() => setForgotStep((step) => (step === "hidden" ? "explain" : step))}
-            className={`inline-flex min-h-11 items-center text-sm font-medium text-zinc-800 underline underline-offset-2 hover:text-zinc-950 dark:text-zinc-200 dark:hover:text-zinc-50 ${FOCUS_RING}`}
+            onClick={() =>
+              setForgotStep((step) => (step === "hidden" ? "explain" : step))
+            }
+            className={`inline-flex min-h-11 items-center text-sm font-medium text-secondary underline underline-offset-2 hover:text-ink ${FOCUS_RING}`}
           >
             Forgot password?
           </button>
@@ -182,8 +190,9 @@ export default function LoginForm() {
           {forgotStep !== "hidden" && (
             <div id={forgotId} className="mt-3 space-y-3">
               <p className={HINT_CLASS}>
-                On-device profiles have no email reset and no server recovery. If you forget the
-                password, you can only reset the profile on this device. That is not real security.
+                On-device profiles have no email reset and no server recovery.
+                If you forget the password, you can only reset the profile on
+                this device. That is not real security.
               </p>
 
               {forgotStep === "explain" && (
@@ -198,7 +207,11 @@ export default function LoginForm() {
 
               {forgotStep === "confirm" && (
                 <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <button type="button" onClick={onConfirmReset} className={SECONDARY_BUTTON}>
+                  <button
+                    type="button"
+                    onClick={onConfirmReset}
+                    className={SECONDARY_BUTTON}
+                  >
                     Yes, reset this profile
                   </button>
                   <button
@@ -212,7 +225,9 @@ export default function LoginForm() {
               )}
 
               <div role="status" aria-live="polite">
-                {resetDone && <p className={`mt-1 ${HINT_CLASS}`}>{RESET_MESSAGE}</p>}
+                {resetDone && (
+                  <p className={`mt-1 ${HINT_CLASS}`}>{RESET_MESSAGE}</p>
+                )}
               </div>
             </div>
           )}
@@ -220,11 +235,11 @@ export default function LoginForm() {
 
         <div role="status" aria-live="polite">
           {loggedInUsername && (
-            <div className="mt-4 rounded-lg border border-emerald-600 bg-emerald-50 p-3 text-sm text-emerald-950 dark:border-emerald-400 dark:bg-emerald-950/40 dark:text-emerald-50">
+            <div className="mt-4 rounded-[var(--radius-button)] border border-primary bg-primary-tint p-3 text-sm text-callout">
               <p className="font-semibold">{loggedInUsername}</p>
               <p className={`mt-1 ${HINT_CLASS}`}>
-                This profile stays on this device. It is not a real account and is not real security.
-                GridWait has no server login.
+                This profile stays on this device. It is not a real account and
+                is not real security. GridWait has no server login.
               </p>
             </div>
           )}

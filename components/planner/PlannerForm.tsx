@@ -5,6 +5,7 @@ import { MAX_HORIZON_DAYS } from "@/lib/constants";
 import { mockBusy } from "@/lib/mocks/busy";
 import { mockScheduleRequest } from "@/lib/mocks/schedule";
 import type { ActivityId, HourIntensity, ScheduleRequest } from "@/lib/types";
+import { activityDisplayName } from "@/components/schedule-grid/overlays";
 import ActivityFields from "./ActivityFields";
 import BusyBlockFields from "./BusyBlockFields";
 import {
@@ -21,14 +22,21 @@ import {
   type BusyFormBlock,
   type PlannerFormState,
 } from "./plannerModel";
-import { ERROR_CLASS, HINT_CLASS, INPUT_CLASS, INPUT_ERROR, INPUT_OK, PRIMARY_BUTTON } from "./plannerStyles";
+import {
+  ERROR_CLASS,
+  HINT_CLASS,
+  INPUT_CLASS,
+  INPUT_ERROR,
+  INPUT_OK,
+  PRIMARY_BUTTON,
+} from "./plannerStyles";
 
 // PLACEHOLDER: the per-device seed is owned by run history (T-C5) and wired at integration (T-I2).
 // Until then the form reuses the mock seed so the request shape is complete. No local storage here.
 const PLACEHOLDER_DIVERSITY_SEED = mockScheduleRequest.diversitySeed;
 
 type Props = {
-  /** ISO instant treated as "now" (MOCK_NOW until T-I1). */
+  /** ISO instant treated as "now"(MOCK_NOW until T-I1). */
   now: string;
   /** 168 hourly values from the current hour (GridResponse.forecast). */
   forecast: HourIntensity[];
@@ -43,14 +51,19 @@ type Submitted = {
 
 export default function PlannerForm({ now, forecast }: Props) {
   const baseId = useId();
-  const [state, setState] = useState<PlannerFormState>(() => defaultFormState(now));
+  const [state, setState] = useState<PlannerFormState>(() =>
+    defaultFormState(now),
+  );
   const [attempted, setAttempted] = useState(false);
   const [submitted, setSubmitted] = useState<Submitted | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
   const manualCounter = useRef(0);
 
   // Validate on submit, then live until the form is clean again.
-  const errors = useMemo(() => (attempted ? validatePlanner(state, now) : {}), [attempted, state, now]);
+  const errors = useMemo(
+    () => (attempted ? validatePlanner(state, now) : {}),
+    [attempted, state, now],
+  );
   const errorCount = Object.keys(errors).length;
 
   const deadlineId = `${baseId}-deadline`;
@@ -63,13 +76,18 @@ export default function PlannerForm({ now, forecast }: Props) {
     setSubmitted(null);
     setState((s) => ({
       ...s,
-      activities: s.activities.map((a) => (a.activity.id === id ? { ...a, ...patch } : a)),
+      activities: s.activities.map((a) =>
+        a.activity.id === id ? { ...a, ...patch } : a,
+      ),
     }));
   }
 
   function updateBusy(key: string, patch: Partial<BusyFormBlock>) {
     setSubmitted(null);
-    setState((s) => ({ ...s, busy: s.busy.map((b) => (b.key === key ? { ...b, ...patch } : b)) }));
+    setState((s) => ({
+      ...s,
+      busy: s.busy.map((b) => (b.key === key ? { ...b, ...patch } : b)),
+    }));
   }
 
   function removeBusy(key: string) {
@@ -80,7 +98,10 @@ export default function PlannerForm({ now, forecast }: Props) {
   function addBusy() {
     setSubmitted(null);
     manualCounter.current += 1;
-    setState((s) => ({ ...s, busy: [...s.busy, emptyBusyBlock(`manual-${manualCounter.current}`)] }));
+    setState((s) => ({
+      ...s,
+      busy: [...s.busy, emptyBusyBlock(`manual-${manualCounter.current}`)],
+    }));
   }
 
   function loadDemo() {
@@ -94,7 +115,11 @@ export default function PlannerForm({ now, forecast }: Props) {
     setAttempted(true);
     setFailure(null);
     try {
-      const result = buildScheduleRequest(state, { now, forecast, diversitySeed: PLACEHOLDER_DIVERSITY_SEED });
+      const result = buildScheduleRequest(state, {
+        now,
+        forecast,
+        diversitySeed: PLACEHOLDER_DIVERSITY_SEED,
+      });
       if (!result.ok) {
         setSubmitted(null);
         return;
@@ -109,7 +134,9 @@ export default function PlannerForm({ now, forecast }: Props) {
       });
     } catch {
       setSubmitted(null);
-      setFailure("Something went wrong while building your plan. Please check the fields and try again.");
+      setFailure(
+        "Something went wrong while building your plan. Please check the fields and try again.",
+      );
     }
   }
 
@@ -118,17 +145,22 @@ export default function PlannerForm({ now, forecast }: Props) {
       noValidate
       onSubmit={onSubmit}
       aria-labelledby={`${baseId}-heading`}
-      className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-900"
+      className="rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-sm sm:p-5"
     >
-      <h2 id={`${baseId}-heading`} className="text-sm font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+      <h2
+        id={`${baseId}-heading`}
+        className="text-sm font-semibold uppercase tracking-wide text-muted"
+      >
         Planner
       </h2>
-      <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
-        Planning from <time dateTime={now}>{formatLocal(now)}</time> (demo time).
-      </p>
 
       <div className="mt-5 space-y-8">
-        <ActivityFields baseId={baseId} items={state.activities} errors={errors} onChange={updateActivity} />
+        <ActivityFields
+          baseId={baseId}
+          items={state.activities}
+          errors={errors}
+          onChange={updateActivity}
+        />
 
         <BusyBlockFields
           baseId={baseId}
@@ -145,7 +177,8 @@ export default function PlannerForm({ now, forecast }: Props) {
             When does it need to be done by?
           </label>
           <p className={`mt-1 ${HINT_CLASS}`}>
-            Up to {MAX_HORIZON_DAYS} days out{maxIso ? `, by ${formatLocal(maxIso)}` : ""}. Eastern time.
+            Up to {MAX_HORIZON_DAYS} days out
+            {maxIso ? `, by ${formatLocal(maxIso)}` : ""}. Eastern time.
           </p>
           <input
             id={deadlineId}
@@ -170,11 +203,13 @@ export default function PlannerForm({ now, forecast }: Props) {
         </div>
       </div>
 
-      <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+      <div className="mt-6 border-t border-border pt-4">
         <div aria-live="polite">
           {attempted && errorCount > 0 && (
             <p className={`mb-3 ${ERROR_CLASS}`}>
-              Please fix {errorCount === 1 ? "the item" : `the ${errorCount} items`} marked above, then try again.
+              Please fix{" "}
+              {errorCount === 1 ? "the item" : `the ${errorCount} items`} marked
+              above, then try again.
             </p>
           )}
           {failure && <p className={`mb-3 ${ERROR_CLASS}`}>{failure}</p>}
@@ -186,26 +221,33 @@ export default function PlannerForm({ now, forecast }: Props) {
 
         <div role="status" aria-live="polite">
           {submitted && (
-            <div className="mt-4 rounded-lg border border-emerald-600 bg-emerald-50 p-3 text-sm text-emerald-950 dark:border-emerald-400 dark:bg-emerald-950/40 dark:text-emerald-50">
+            <div className="mt-4 rounded-[var(--radius-button)] border border-primary bg-primary-tint p-3 text-sm text-callout">
               <p className="font-semibold">Your plan is ready to schedule.</p>
               <ul className="mt-1 list-disc space-y-0.5 pl-5">
                 {submitted.items.map((item) => (
                   <li key={item.activity.id}>
-                    {item.activity.name}: {item.durationMin} min, {item.energyKwh} kWh
+                    {activityDisplayName(item.activity.id)}:{" "}
+                    {item.durationMin} min,{" "}
+                    {item.energyKwh} kWh
                     {item.delayStart && ", delay-start"}
                   </li>
                 ))}
                 <li>
-                  {submitted.busyCount} busy {submitted.busyCount === 1 ? "block" : "blocks"}
-                  {submitted.asleepCount > 0 && ` (${submitted.asleepCount} asleep)`}
+                  {submitted.busyCount} busy{" "}
+                  {submitted.busyCount === 1 ? "block" : "blocks"}
+                  {submitted.asleepCount > 0 &&
+                    ` (${submitted.asleepCount} asleep)`}
                 </li>
                 <li>
-                  Done by <time dateTime={submitted.deadline}>{formatLocal(submitted.deadline)}</time>
+                  Done by{" "}
+                  <time dateTime={submitted.deadline}>
+                    {formatLocal(submitted.deadline)}
+                  </time>
                 </li>
               </ul>
               <p className={`mt-2 ${HINT_CLASS}`}>
-                Recommended times will appear here once the scheduler is connected. For now the request is logged to
-                the browser console.
+                Recommended times will appear here once the scheduler is
+                connected. For now the request is logged to the browser console.
               </p>
             </div>
           )}

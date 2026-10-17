@@ -1,6 +1,10 @@
 "use client";
 
-import { errorKey, type BusyFormBlock, type PlannerErrors } from "./plannerModel";
+import {
+  errorKey,
+  type BusyFormBlock,
+  type PlannerErrors,
+} from "./plannerModel";
 import {
   CHECKBOX_CLASS,
   ERROR_CLASS,
@@ -24,15 +28,24 @@ type Props = {
   onChange: (key: string, patch: Patch) => void;
 };
 
-export default function BusyBlockFields({ baseId, blocks, errors, onLoadDemo, onAdd, onRemove, onChange }: Props) {
+export default function BusyBlockFields({
+  baseId,
+  blocks,
+  errors,
+  onLoadDemo,
+  onAdd,
+  onRemove,
+  onChange,
+}: Props) {
   const asleepCount = blocks.filter((b) => b.asleep).length;
 
   return (
     <fieldset>
       <legend className="text-base font-semibold">When are you busy?</legend>
       <p className={`mt-1 ${HINT_CLASS}`}>
-        Add the times you can&apos;t load or unload, and mark the ones you&apos;re asleep. Times are Eastern. Your
-        schedule stays in this tab and is never uploaded.
+        Add the times you can&apos;t load or unload, and mark the ones
+        you&apos;re asleep. Times are Eastern. Your schedule stays in this tab
+        and is never uploaded.
       </p>
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -45,8 +58,9 @@ export default function BusyBlockFields({ baseId, blocks, errors, onLoadDemo, on
       </div>
 
       {blocks.length === 0 ? (
-        <p className="mt-3 rounded-lg border border-dashed border-zinc-300 p-3 text-sm text-zinc-600 dark:border-zinc-700 dark:text-zinc-400">
-          No busy blocks yet. Without any, every hour before the deadline counts as free.
+        <p className="mt-3 rounded-[var(--radius-button)] border border-dashed border-border p-3 text-sm text-muted">
+          No busy blocks yet. Without any, every hour before the deadline counts
+          as free.
         </p>
       ) : (
         <>
@@ -66,17 +80,17 @@ export default function BusyBlockFields({ baseId, blocks, errors, onLoadDemo, on
               return (
                 <li
                   key={b.key}
-                  className={`rounded-xl border p-3 ${
+                  className={`rounded-[var(--radius-card)] border p-3 ${
                     b.asleep
-                      ? "border-indigo-300 bg-indigo-50 dark:border-indigo-800 dark:bg-indigo-950/40"
-                      : "border-zinc-200 bg-white dark:border-zinc-800 dark:bg-zinc-900"
+                      ? "border-sleep bg-sleep"
+                      : "border-border bg-surface"
                   }`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <p className="min-w-0 text-sm font-medium">
                       <span className="break-words">{name}</span>
                       {b.asleep && (
-                        <span className="ml-2 inline-block rounded bg-indigo-700 px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white dark:bg-indigo-300 dark:text-zinc-950">
+                        <span className="ml-2 inline-block rounded bg-sleep px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
                           Asleep
                         </span>
                       )}
@@ -100,9 +114,13 @@ export default function BusyBlockFields({ baseId, blocks, errors, onLoadDemo, on
                         id={startId}
                         type="datetime-local"
                         value={b.startLocal}
-                        onChange={(e) => onChange(b.key, { startLocal: e.target.value })}
+                        onChange={(e) =>
+                          onChange(b.key, { startLocal: e.target.value })
+                        }
                         aria-invalid={startError ? true : undefined}
-                        aria-describedby={startError ? `${startId}-error` : undefined}
+                        aria-describedby={
+                          startError ? `${startId}-error` : undefined
+                        }
                         className={`mt-1 ${INPUT_CLASS} ${startError ? INPUT_ERROR : INPUT_OK}`}
                       />
                       {startError && (
@@ -119,9 +137,13 @@ export default function BusyBlockFields({ baseId, blocks, errors, onLoadDemo, on
                         id={endId}
                         type="datetime-local"
                         value={b.endLocal}
-                        onChange={(e) => onChange(b.key, { endLocal: e.target.value })}
+                        onChange={(e) =>
+                          onChange(b.key, { endLocal: e.target.value })
+                        }
                         aria-invalid={endError ? true : undefined}
-                        aria-describedby={endError ? `${endId}-error` : undefined}
+                        aria-describedby={
+                          endError ? `${endId}-error` : undefined
+                        }
                         className={`mt-1 ${INPUT_CLASS} ${endError ? INPUT_ERROR : INPUT_OK}`}
                       />
                       {endError && (
@@ -132,17 +154,24 @@ export default function BusyBlockFields({ baseId, blocks, errors, onLoadDemo, on
                     </div>
                   </div>
 
-                  <label htmlFor={asleepId} className="mt-1 flex min-h-11 cursor-pointer items-center gap-3">
+                  <label
+                    htmlFor={asleepId}
+                    className="mt-1 flex min-h-11 cursor-pointer items-center gap-3"
+                  >
                     <input
                       id={asleepId}
                       type="checkbox"
                       checked={b.asleep}
-                      onChange={(e) => onChange(b.key, { asleep: e.target.checked })}
+                      onChange={(e) =>
+                        onChange(b.key, { asleep: e.target.checked })
+                      }
                       className={CHECKBOX_CLASS}
                     />
                     <span className="text-sm">
                       <span className="font-medium">I&apos;m asleep</span>
-                      <span className={`block ${HINT_CLASS}`}>Runs can continue while you sleep; loading can&apos;t.</span>
+                      <span className={`block ${HINT_CLASS}`}>
+                        Runs can continue while you sleep; loading can&apos;t.
+                      </span>
                     </span>
                   </label>
                 </li>

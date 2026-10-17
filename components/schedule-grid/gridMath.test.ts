@@ -38,11 +38,15 @@ describe("groupByLocalDay", () => {
       "2026-10-24",
       "2026-10-25",
     ]);
-    expect(days.map((d) => d.hours.length)).toEqual([15, 24, 24, 24, 24, 24, 24, 9]);
+    expect(days.map((d) => d.hours.length)).toEqual([
+      15, 24, 24, 24, 24, 24, 24, 9,
+    ]);
     expect(days[0].weekday).toBe("Sun");
     expect(days[0].dayOfMonth).toBe("18");
     expect(days[0].hours[0].position).toBe(9); // MOCK_NOW is 9 AM
-    expect(days[1].hours.map((h) => h.position)).toEqual(Array.from({ length: 24 }, (_, i) => i));
+    expect(days[1].hours.map((h) => h.position)).toEqual(
+      Array.from({ length: 24 }, (_, i) => i),
+    );
     expect(rowCount(days)).toBe(24);
   });
 
@@ -53,7 +57,9 @@ describe("groupByLocalDay", () => {
     expect(days).toHaveLength(1);
     expect(days[0].dateKey).toBe("2026-11-01");
     expect(days[0].hours).toHaveLength(25);
-    expect(days[0].hours.map((h) => h.position)).toEqual(Array.from({ length: 25 }, (_, i) => i));
+    expect(days[0].hours.map((h) => h.position)).toEqual(
+      Array.from({ length: 25 }, (_, i) => i),
+    );
     expect(days[0].dayEndMs - days[0].dayStartMs).toBe(25 * HOUR_MS);
     expect(rowCount(days)).toBe(25);
     // Next hour belongs to Nov 2.
@@ -70,14 +76,17 @@ describe("groupByLocalDay", () => {
     expect(days[0].hours).toHaveLength(23);
     expect(days[0].hours.at(-1)?.position).toBe(22);
     expect(days[0].dayEndMs - days[0].dayStartMs).toBe(23 * HOUR_MS);
-    expect(groupByLocalDay(hoursFrom(start, 24), TZ).map((d) => d.dateKey)).toEqual([
-      "2026-03-08",
-      "2026-03-09",
-    ]);
+    expect(
+      groupByLocalDay(hoursFrom(start, 24), TZ).map((d) => d.dateKey),
+    ).toEqual(["2026-03-08", "2026-03-09"]);
   });
 
   it("uses the zone passed in, not the machine's local zone", () => {
-    const hour: HourIntensity = { hourStart: "2026-10-18T20:00:00-04:00", gco2PerKwh: 1, tier: "pattern" };
+    const hour: HourIntensity = {
+      hourStart: "2026-10-18T20:00:00-04:00",
+      gco2PerKwh: 1,
+      tier: "pattern",
+    };
     expect(groupByLocalDay([hour], TZ)[0].dateKey).toBe("2026-10-18");
     expect(groupByLocalDay([hour], "Asia/Tokyo")[0].dateKey).toBe("2026-10-19");
     expect(groupByLocalDay([hour], "UTC")[0].dateKey).toBe("2026-10-19");
@@ -85,8 +94,14 @@ describe("groupByLocalDay", () => {
 
   it("sorts unsorted input and skips unparseable timestamps", () => {
     const [a, b] = hoursFrom(Date.UTC(2026, 9, 19, 4), 2);
-    const days = groupByLocalDay([b, a, { hourStart: "garbage", gco2PerKwh: 1, tier: "pattern" }], TZ);
-    expect(days[0].hours.map((h) => h.hour.hourStart)).toEqual([a.hourStart, b.hourStart]);
+    const days = groupByLocalDay(
+      [b, a, { hourStart: "garbage", gco2PerKwh: 1, tier: "pattern" }],
+      TZ,
+    );
+    expect(days[0].hours.map((h) => h.hour.hourStart)).toEqual([
+      a.hourStart,
+      b.hourStart,
+    ]);
   });
 });
 
@@ -101,25 +116,46 @@ describe("isoToGridPosition", () => {
   const days = groupByLocalDay(mockGrid.forecast, TZ);
 
   it("maps an hour in the middle of the week", () => {
-    expect(isoToGridPosition("2026-10-20T15:00:00-04:00", days)).toEqual({ dayIndex: 2, hourPosition: 15 });
+    expect(isoToGridPosition("2026-10-20T15:00:00-04:00", days)).toEqual({
+      dayIndex: 2,
+      hourPosition: 15,
+    });
   });
 
   it("maps 'now' to the first day at 9 AM", () => {
-    expect(isoToGridPosition(MOCK_NOW, days)).toEqual({ dayIndex: 0, hourPosition: 9 });
+    expect(isoToGridPosition(MOCK_NOW, days)).toEqual({
+      dayIndex: 0,
+      hourPosition: 9,
+    });
   });
 
   it("splits a range that crosses midnight across two day columns", () => {
-    expect(isoToGridPosition("2026-10-20T23:00:00-04:00", days)).toEqual({ dayIndex: 2, hourPosition: 23 });
-    expect(isoToGridPosition("2026-10-21T01:00:00-04:00", days)).toEqual({ dayIndex: 3, hourPosition: 1 });
-    expect(isoToGridPosition("2026-10-21T00:00:00-04:00", days)).toEqual({ dayIndex: 3, hourPosition: 0 });
+    expect(isoToGridPosition("2026-10-20T23:00:00-04:00", days)).toEqual({
+      dayIndex: 2,
+      hourPosition: 23,
+    });
+    expect(isoToGridPosition("2026-10-21T01:00:00-04:00", days)).toEqual({
+      dayIndex: 3,
+      hourPosition: 1,
+    });
+    expect(isoToGridPosition("2026-10-21T00:00:00-04:00", days)).toEqual({
+      dayIndex: 3,
+      hourPosition: 0,
+    });
   });
 
   it("returns fractional positions", () => {
-    expect(isoToGridPosition("2026-10-20T15:30:00-04:00", days)).toEqual({ dayIndex: 2, hourPosition: 15.5 });
+    expect(isoToGridPosition("2026-10-20T15:30:00-04:00", days)).toEqual({
+      dayIndex: 2,
+      hourPosition: 15.5,
+    });
   });
 
   it("returns the last day's length for an instant exactly at its end", () => {
-    expect(isoToGridPosition("2026-10-26T00:00:00-04:00", days)).toEqual({ dayIndex: 7, hourPosition: 24 });
+    expect(isoToGridPosition("2026-10-26T00:00:00-04:00", days)).toEqual({
+      dayIndex: 7,
+      hourPosition: 24,
+    });
   });
 
   it("returns null outside the grid or for bad input", () => {
@@ -131,16 +167,16 @@ describe("isoToGridPosition", () => {
 });
 
 describe("makeColorScale", () => {
-  it("maps min to the green end and max to the red end", () => {
+  it("maps min to the clean end and max to the dirty end", () => {
     const scale = makeColorScale([300, 210, 348]);
     expect(scale.min).toBe(210);
     expect(scale.max).toBe(348);
     expect(scale.t(210)).toBe(0);
     expect(scale.t(348)).toBe(1);
     expect(scale.t(279)).toBeCloseTo(0.5);
-    expect(colorForT(scale.t(210))).toBe("hsl(120 65% 55%)");
-    expect(colorForT(scale.t(348))).toBe("hsl(0 65% 55%)");
-    expect(colorForT(0.5)).toBe("hsl(60 65% 55%)");
+    expect(colorForT(scale.t(210))).toBe("rgb(17 94 89)");
+    expect(colorForT(scale.t(348))).toBe("rgb(242 153 74)");
+    expect(colorForT(0.5)).toBe("rgb(183 189 175)");
   });
 
   it("clamps values outside the range", () => {
@@ -153,7 +189,7 @@ describe("makeColorScale", () => {
     const scale = makeColorScale([250, 250, 250]);
     expect(scale.t(250)).toBe(0.5);
     expect(Number.isNaN(scale.t(250))).toBe(false);
-    expect(colorForT(scale.t(250))).toBe("hsl(60 65% 55%)");
+    expect(colorForT(scale.t(250))).toBe("rgb(183 189 175)");
   });
 
   it("handles an empty list", () => {
@@ -166,7 +202,11 @@ describe("makeColorScale", () => {
 
 describe("sanitizeHours", () => {
   it("drops malformed entries and counts them", () => {
-    const good: HourIntensity = { hourStart: MOCK_NOW, gco2PerKwh: 250, tier: "pattern" };
+    const good: HourIntensity = {
+      hourStart: MOCK_NOW,
+      gco2PerKwh: 250,
+      tier: "pattern",
+    };
     const { valid, dropped } = sanitizeHours([
       good,
       { hourStart: "not a date", gco2PerKwh: 250, tier: "pattern" },
@@ -187,15 +227,23 @@ describe("sanitizeHours", () => {
 
 describe("hourSource and formatHour", () => {
   it("reads the tier through one helper", () => {
-    expect(hourSource({ hourStart: MOCK_NOW, gco2PerKwh: 1, tier: "pattern" })).toBe("forecast");
-    expect(hourSource({ hourStart: MOCK_NOW, gco2PerKwh: 1, tier: "forecast" })).toBe("forecast");
-    expect(hourSource({ hourStart: MOCK_NOW, gco2PerKwh: 1, tier: "measured" })).toBe("measured");
+    expect(
+      hourSource({ hourStart: MOCK_NOW, gco2PerKwh: 1, tier: "pattern" }),
+    ).toBe("forecast");
+    expect(
+      hourSource({ hourStart: MOCK_NOW, gco2PerKwh: 1, tier: "forecast" }),
+    ).toBe("forecast");
+    expect(
+      hourSource({ hourStart: MOCK_NOW, gco2PerKwh: 1, tier: "measured" }),
+    ).toBe("measured");
   });
 
   it("formats in America/New_York with plain spaces", () => {
     const s = formatHour("2026-10-20T15:00:00-04:00", TZ);
     expect(s).toBe("Tue, Oct 20, 3 PM EDT");
     expect(s).not.toMatch(/[\u202f\u00a0]/);
-    expect(formatHour("2026-11-03T15:00:00-05:00", TZ)).toBe("Tue, Nov 3, 3 PM EST");
+    expect(formatHour("2026-11-03T15:00:00-05:00", TZ)).toBe(
+      "Tue, Nov 3, 3 PM EST",
+    );
   });
 });

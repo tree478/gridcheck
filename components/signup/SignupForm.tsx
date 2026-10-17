@@ -45,7 +45,9 @@ export default function SignupForm() {
 
   function patch(next: Partial<SignupFormState>) {
     const editingContent =
-      next.username !== undefined || next.password !== undefined || next.acceptedTerms !== undefined;
+      next.username !== undefined ||
+      next.password !== undefined ||
+      next.acceptedTerms !== undefined;
     if (editingContent) {
       setCreatedUsername(null);
       setFailure(null);
@@ -70,7 +72,9 @@ export default function SignupForm() {
       }
       setCreatedUsername(result.username);
     } catch {
-      setFailure("Something went wrong. Please check the fields and try again.");
+      setFailure(
+        "Something went wrong. Please check the fields and try again.",
+      );
     }
   }
 
@@ -79,7 +83,7 @@ export default function SignupForm() {
       noValidate
       onSubmit={onSubmit}
       aria-label="Sign up"
-      className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:p-5 dark:border-zinc-800 dark:bg-zinc-900"
+      className="rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-sm sm:p-5"
     >
       <div className="space-y-5">
         <div>
@@ -115,7 +119,9 @@ export default function SignupForm() {
               value={state.password}
               onChange={(e) => patch({ password: e.target.value })}
               aria-invalid={passwordError ? true : undefined}
-              aria-describedby={passwordError ? `${passwordId}-error` : undefined}
+              aria-describedby={
+                passwordError ? `${passwordId}-error` : undefined
+              }
               className={`min-w-0 flex-1 basis-40 ${INPUT_CLASS} ${passwordError ? INPUT_ERROR : INPUT_OK}`}
             />
             <button
@@ -136,7 +142,10 @@ export default function SignupForm() {
         </div>
 
         <div>
-          <label htmlFor={termsId} className="flex min-h-11 cursor-pointer items-start gap-3">
+          <label
+            htmlFor={termsId}
+            className="flex min-h-11 cursor-pointer items-start gap-3"
+          >
             <input
               id={termsId}
               type="checkbox"
@@ -146,8 +155,9 @@ export default function SignupForm() {
               aria-describedby={termsError ? `${termsId}-error` : undefined}
               className={`mt-1 ${CHECKBOX_CLASS}`}
             />
-            <span className="text-sm text-zinc-800 dark:text-zinc-200">
-              I understand this profile stays on this device and is not real security.
+            <span className="text-sm text-secondary">
+              I understand this profile stays on this device and is not real
+              security.
             </span>
           </label>
           {termsError && (
@@ -158,7 +168,7 @@ export default function SignupForm() {
         </div>
       </div>
 
-      <div className="mt-6 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+      <div className="mt-6 border-t border-border pt-4">
         {failure && (
           <p role="alert" className={`mb-3 ${ERROR_CLASS}`}>
             {failure}
@@ -172,7 +182,7 @@ export default function SignupForm() {
         <p className="mt-3">
           <Link
             href="/login"
-            className={`inline-flex min-h-11 items-center text-sm font-medium text-zinc-800 underline underline-offset-2 hover:text-zinc-950 dark:text-zinc-200 dark:hover:text-zinc-50 ${FOCUS_RING}`}
+            className={`inline-flex min-h-11 items-center text-sm font-medium text-secondary underline underline-offset-2 hover:text-ink ${FOCUS_RING}`}
           >
             Log in
           </Link>
@@ -180,11 +190,11 @@ export default function SignupForm() {
 
         <div role="status" aria-live="polite">
           {createdUsername && (
-            <div className="mt-4 rounded-lg border border-emerald-600 bg-emerald-50 p-3 text-sm text-emerald-950 dark:border-emerald-400 dark:bg-emerald-950/40 dark:text-emerald-50">
+            <div className="mt-4 rounded-[var(--radius-button)] border border-primary bg-primary-tint p-3 text-sm text-callout">
               <p className="font-semibold">{createdUsername}</p>
               <p className={`mt-1 ${HINT_CLASS}`}>
-                This profile stays on this device. It is not a real account and is not real security.
-                GridWait has no server login.
+                This profile stays on this device. It is not a real account and
+                is not real security. GridWait has no server login.
               </p>
             </div>
           )}

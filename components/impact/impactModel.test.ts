@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { ACTIVITY_CATALOG, NEAR_TIE_MARGIN, SCORE_BANDS } from "../../lib/constants";
+import {
+  ACTIVITY_CATALOG,
+  NEAR_TIE_MARGIN,
+  SCORE_BANDS,
+} from "../../lib/constants";
 import { mockGrid } from "../../lib/mocks/grid";
 import { mockScheduleResult } from "../../lib/mocks/schedule";
 import type { RunRecord } from "../../lib/types";
@@ -30,7 +34,8 @@ function catalogKwh(id: "washer" | "ev"): number {
 }
 
 function run(
-  partial: Partial<RunRecord> & Pick<RunRecord, "id" | "chosenGrams" | "bestGrams" | "worstGrams">,
+  partial: Partial<RunRecord> &
+    Pick<RunRecord, "id" | "chosenGrams" | "bestGrams" | "worstGrams">,
 ): RunRecord {
   return {
     owner: "guest",
@@ -48,7 +53,9 @@ function run(
 }
 
 function okWasher() {
-  const result = mockScheduleResult.results.find((item) => item.activityId === "washer");
+  const result = mockScheduleResult.results.find(
+    (item) => item.activityId === "washer",
+  );
   if (!result || !result.ok) throw new Error("expected ok washer result");
   return result;
 }
@@ -62,18 +69,28 @@ describe("runScore", () => {
   });
 
   it("scores 100 when worst is at or below best", () => {
-    expect(runScore({ chosenGrams: 80, bestGrams: 100, worstGrams: 100 })).toBe(100);
-    expect(runScore({ chosenGrams: 80, bestGrams: 100, worstGrams: 90 })).toBe(100);
+    expect(runScore({ chosenGrams: 80, bestGrams: 100, worstGrams: 100 })).toBe(
+      100,
+    );
+    expect(runScore({ chosenGrams: 80, bestGrams: 100, worstGrams: 90 })).toBe(
+      100,
+    );
   });
 
   it("floors at 0 and caps at 100", () => {
-    expect(runScore({ chosenGrams: 300, bestGrams: 100, worstGrams: 200 })).toBe(0);
-    expect(runScore({ chosenGrams: 50, bestGrams: 100, worstGrams: 200 })).toBe(100);
+    expect(
+      runScore({ chosenGrams: 300, bestGrams: 100, worstGrams: 200 }),
+    ).toBe(0);
+    expect(runScore({ chosenGrams: 50, bestGrams: 100, worstGrams: 200 })).toBe(
+      100,
+    );
   });
 
   it("gives the washer Recommended mock a perfect score", () => {
     const washer = okWasher();
-    const recommended = washer.options.find((option) => option.labels.includes("recommended"));
+    const recommended = washer.options.find((option) =>
+      option.labels.includes("recommended"),
+    );
     if (!recommended) throw new Error("expected washer recommended");
     const record = chosenRecordPreview({
       activityId: "washer",
@@ -124,7 +141,9 @@ describe("impactTotals", () => {
     });
     expect(dirty.soonestGrams - dirty.chosenGrams).toBe(-50);
     expect(impactTotals([dirty, clean]).totalSavedGrams).toBe(0);
-    expect(washerWorstRun.soonestGrams - washerWorstRun.chosenGrams).toBeLessThan(0);
+    expect(
+      washerWorstRun.soonestGrams - washerWorstRun.chosenGrams,
+    ).toBeLessThan(0);
     const fromMocks = impactTotals(mockRuns);
     const expectedSaved = mockRuns.reduce(
       (sum, item) => sum + (item.soonestGrams - item.chosenGrams),
@@ -180,13 +199,17 @@ describe("formatMass, formatScore, modeledLabel", () => {
     expect(formatMass(-1500)).toBe("-1.5 kg");
     expect(formatMass(-33.099999999999994)).toBe("-33.1 g");
     expect(formatMass(kilogramFixture.chosenGrams)).toBe("1.5 kg");
-    expect(formatMass(kilogramFixture.soonestGrams - kilogramFixture.chosenGrams)).toBe("1.5 kg");
+    expect(
+      formatMass(kilogramFixture.soonestGrams - kilogramFixture.chosenGrams),
+    ).toBe("1.5 kg");
   });
 
   it("shows scores as integers and labels modeled estimates once", () => {
     expect(formatScore(88.4)).toBe("88");
     expect(modeledLabel("420 g")).toBe("420 g (modeled estimate)");
-    expect(modeledLabel("420 g (modeled estimate)")).toBe("420 g (modeled estimate)");
+    expect(modeledLabel("420 g (modeled estimate)")).toBe(
+      "420 g (modeled estimate)",
+    );
   });
 });
 
