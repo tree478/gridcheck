@@ -33,7 +33,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 
 - [x] **T-00 – T-03 Scaffold, rules/docs, original types/constants, mocks, demo .ics** · S
 - [x] **T-04 Folder skeleton** · skipped; B creates the pages in T-B1.
-- [ ] **T-K1 Update shared contract** · All (S drives) · **Must, blocks everyone** · branch `soumya/contract`
+- [x] **T-K1 Update shared contract** · All (S drives) · **Must, blocks everyone** · branch `soumya/contract`
   - Replace `lib/types.ts` and `lib/constants.ts` with PRD §7–§8 exactly (tiers, `forecastMadeAt`, activity catalog with attention type and delay-start, `BusyBlock.asleep`, option labels, `RunRecord`, shared config including `NEAR_TIE_MARGIN = 0.03` and `MAX_DELAY_START_HOURS = 24`).
   - Update `lib/mocks/*` to the new types: a `GridResponse` with `measured` recent hours and 168 `pattern` hours; a student-week `BusyBlock[]` including sleep; a mock `ScheduleResult` with merged labels.
   - Put PRD v2.1 at `docs/PRD.md` and this file at `docs/TODO.md`.
@@ -54,10 +54,10 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
   - `lib/grid/eia.ts`: EIA API v2, respondent `ISNE`, hourly `electricity/rto/fuel-type-data`, **last 28 days**. **Fetch once and print the real field names, fuel codes, and units before writing parsing code.** Handle pagination (max 5,000 rows/request). 8-second timeout. Key from `process.env.EIA_API_KEY`, server only.
   - Skip `region-data` (demand) unless it costs nothing extra; the demand tier is cut.
   - **Done when:** a test prints the last 24 h of fuel rows with UTC periods converted to America/New_York.
-- [ ] **T-S2 Carbon intensity** · Must · branch `soumya/intensity`
+- [x] **T-S2 Carbon intensity** · Must · branch `soumya/intensity`
   - `lib/grid/intensity.ts`: per hour Σ(MWh × factor) ÷ Σ(MWh) using `EMISSION_FACTORS`. Negative MWh → 0. Unknown codes → `OTH`, logged. Hours with no fuel data are dropped, never filled with 0. Output tagged `measured`.
   - **Done when:** tests pass for a hand-calculated hour, negatives, an unknown code, and a missing hour.
-- [ ] **T-S3 Pattern forecast** · Must · branch `soumya/forecast`
+- [x] **T-S3 Pattern forecast** · Must · branch `soumya/forecast`
   - `lib/grid/forecast.ts`: each of the next 168 hours = mean intensity at the same local weekday + hour over the last 4 weeks (3 if a week is missing), tagged `pattern`. Fill the gap between the latest measured hour and now with pattern values.
   - **Done when:** tests pass for length 168, DST-safe alignment, flat in → flat out, and gap fill.
 - [ ] **T-S4 `/api/grid` route** · Must · branch `soumya/api-grid`
