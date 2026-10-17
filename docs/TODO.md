@@ -38,7 +38,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
   - Update `lib/mocks/*` to the new types: a `GridResponse` with `measured` recent hours and 168 `pattern` hours; a student-week `BusyBlock[]` including sleep; a mock `ScheduleResult` with merged labels.
   - Put PRD v2.1 at `docs/PRD.md` and this file at `docs/TODO.md`.
   - **Done when:** everything compiles, `npm run build` passes, merged to main, and the team has pulled.
-- [ ] **T-05 Deploy** · S · Must · (browser)
+- [x] **T-05 Deploy** · S · Must · (browser)
   - Import the repo into Vercel, add `EIA_API_KEY`, deploy main.
   - **Done when:** the deployed URL loads on all three teammates' phones and the link is shared.
 
