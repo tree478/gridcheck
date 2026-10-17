@@ -1,0 +1,6 @@
+---
+description: GridWait project rules
+alwaysApply: true
+---
+
+Always follow AGENTS.md in the repository root. Read docs/PRD.md and docs/TODO.md before planning any task.
