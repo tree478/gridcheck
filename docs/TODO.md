@@ -90,7 +90,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [x] **T-B3 7-day schedule grid** · Must · branch `b/schedule-grid` · **hardest screen; start early**
   - Hour cells colored by intensity (scale = min/max of the 7-day forecast); forecast hours visibly marked as forecast; legend; "Now" marker. Day tabs on mobile, full grid on desktop. Tap a cell to see time, value, and tier.
   - **Done when:** it renders the mock forecast correctly at 375px and 1440px.
-- [ ] **T-B2 Planner form** · Must · branch `b/planner-form`
+- [x] **T-B2 Planner form** · Must · branch `b/planner-form`
   - Pre-fills from catalog defaults. "Use demo schedule" button; busy-block list with "asleep" toggle (add/remove). Multi-select activities with editable duration and energy, and a delay-start toggle where supported. Deadline up to 7 days out. No "Save as my defaults."
   - **Done when:** the form produces a valid `ScheduleRequest` (logged to console) from mock data.
 - [ ] **T-B4 Grid overlays** · Must · branch `b/overlays`
