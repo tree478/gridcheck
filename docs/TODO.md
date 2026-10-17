@@ -134,7 +134,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [x] **T-C5 Run history** · Then · branch `c/impact-log`
   - `lib/impact/`: local storage under a single "guest" key (keep the key a parameter): save, list (by run start, newest first), mark done, delete. Each run stores chosen, Best, Worst, Soonest grams (planning-time), kWh, window, confidence, `forecastMadeAt`, timestamp. Also stores the diversity seed. try/catch + in-memory fallback.
   - **Done when:** tests pass with mocked storage, including storage that throws.
-- [ ] **T-C9 Scoring** · Then · branch `c/scoring`
+- [x] **T-C9 Scoring** · Then · branch `c/scoring`
   - Per run: (Worst − chosen) ÷ (Worst − Best) × 100, capped at 100, floor 0; within near-tie margin of Best → 100; Worst ≤ Best → 100. Bands: ≥ 95 Top choice · 75–94 Great · 50–74 OK · < 50 Could be cleaner. Overall = energy-weighted average. Saved = Soonest − chosen (negatives count). Rank by score, ties by recency. Totals: CO₂ saved, modeled emissions, counts, band breakdown.
   - **Done when:** tests cover each scoring edge case and band boundary.
 - [x] **T-C8 Profiles** · Then · logic uncut on `logic` (T-B7 and T-B8 stay cut) · `lib/impact/profiles.ts`: create, log in, log out, update defaults, reset deletes that profile's runs; passwords hashed with Web Crypto; guest history untouched
