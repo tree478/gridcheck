@@ -111,7 +111,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 
 **Folders:** `lib/scheduling/**`, `lib/impact/**`, `lib/schedule-input/**`, `docs/PITCH.md`, `docs/METHODOLOGY.md`. All pure functions with unit tests, no UI. Test against `lib/mocks/*`.
 
-- [ ] **T-C1 Slots + activity catalog** · Must · branch `c/slots`
+- [x] **T-C1 Slots + activity catalog** · Must · branch `c/slots`
   - Split now → deadline (max 7 days) into 15-min slots from the next boundary, each with its hour's intensity and tier. Activity catalog per PRD §8 (energy per cycle, duration, attention `start` / `startEnd` / `throughout`, delay-start). Laptop preset optional.
   - **Done when:** tests pass for slot count, boundary rounding, and a deadline less than one slot away.
 - [ ] **T-C7 Schedule input** · Must · branch `c/schedule`
