@@ -50,7 +50,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 
 **Order:** T-K1 → T-S1 → T-S2 → T-S3 → T-S4 → T-05 → T-I1, T-I2 → T-I4 → T-S6, T-I3 → T-P5 → (stretch) T-S7
 
-- [ ] **T-S1 EIA client** · Must · branch `soumya/eia-client`
+- [x] **T-S1 EIA client** · Must · branch `soumya/eia-client`
   - `lib/grid/eia.ts`: EIA API v2, respondent `ISNE`, hourly `electricity/rto/fuel-type-data`, **last 28 days**. **Fetch once and print the real field names, fuel codes, and units before writing parsing code.** Handle pagination (max 5,000 rows/request). 8-second timeout. Key from `process.env.EIA_API_KEY`, server only.
   - Skip `region-data` (demand) unless it costs nothing extra; the demand tier is cut.
   - **Done when:** a test prints the last 24 h of fuel rows with UTC periods converted to America/New_York.
