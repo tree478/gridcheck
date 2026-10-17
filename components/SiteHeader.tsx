@@ -27,28 +27,41 @@ export default function SiteHeader() {
         >
           GridWait
         </Link>
-        <nav aria-label="Main">
-          <ul className="flex flex-wrap items-center gap-x-1">
-            {NAV_ITEMS.map(({ href, label }) => {
-              const active = isActive(pathname, href);
-              return (
-                <li key={href}>
-                  <Link
-                    href={href}
-                    aria-current={active ? "page" : undefined}
-                    className={`flex min-h-11 items-center border-b-2 px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 ${
-                      active
-                        ? "border-emerald-600 font-semibold text-zinc-900 dark:border-emerald-400 dark:text-zinc-50"
-                        : "border-transparent text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
-                    }`}
-                  >
-                    {label}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </nav>
+        <div className="flex flex-wrap items-center gap-x-1">
+          <nav aria-label="Main">
+            <ul className="flex flex-wrap items-center gap-x-1">
+              {NAV_ITEMS.map(({ href, label }) => {
+                const active = isActive(pathname, href);
+                return (
+                  <li key={href}>
+                    <Link
+                      href={href}
+                      aria-current={active ? "page" : undefined}
+                      className={`flex min-h-11 items-center border-b-2 px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 ${
+                        active
+                          ? "border-emerald-600 font-semibold text-zinc-900 dark:border-emerald-400 dark:text-zinc-50"
+                          : "border-transparent text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+                      }`}
+                    >
+                      {label}
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </nav>
+          <Link
+            href="/signup"
+            aria-current={isActive(pathname, "/signup") ? "page" : undefined}
+            className={`flex min-h-11 items-center px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 ${
+              isActive(pathname, "/signup")
+                ? "font-semibold text-zinc-900 dark:text-zinc-50"
+                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+            }`}
+          >
+            Sign up
+          </Link>
+        </div>
       </div>
     </header>
   );

@@ -102,8 +102,24 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [x] **T-B6 Impact dashboard** · Then · branch `b/dashboard` · depends on T-C5, T-C9
   - Reads guest history: overall score + band; total CO₂ saved vs. Soonest (negatives shown; kg when ≥ 1000 g); total modeled emissions; counts; band breakdown; runs list newest first (date, appliance, window, CO₂, saved, score + band, rank, status); sort by most recent / most sustainable; mark done, delete; empty state; note that scores use planning-time forecasts and history stays on this device.
   - **Done when:** it renders with mock runs and with an empty history.
-- [ ] ~~**T-B7 Sign up**~~ · **CUT** (accounts)
+- [x] ~~**T-B7 Sign up**~~ · **CUT** (accounts)
 - [ ] ~~**T-B8 Log in**~~ · **CUT** (accounts)
+- [ ] **T-B9 Wire what B still cannot build** · Then · blocked · branch `b/wire-real` **only after the named deps are merged**
+  - Parking lot for UI work that still uses mocks or placeholders. **Do not start.** S leads T-I1, T-I2, and T-I3 and may edit `app/plan/**` and `app/impact/**` after telling B. This task is only the leftover B-folder swaps if those still need a UI owner once the libraries exist. Do not implement `lib/scheduling/**`, `lib/impact/**`, `lib/schedule-input/**`, `lib/grid/**`, `lib/calendar/**`, or `app/api/**`.
+  - **Blocked on S**
+    - T-S4 + T-I1: Home `GridNowCard` and Plan still read `mockGrid` / `MOCK_NOW`. Need `GET /api/grid` and a "Using cached grid data" note when `source === "fallback"`.
+    - T-I2: S wires C's schedule modules into Plan (grid overlays + option cards). B cannot do this until T-C4 and T-C7 exist.
+    - T-S6 + T-I3: "Add to calendar" is `CALENDAR_PLACEHOLDER`. Need `lib/calendar/export.ts` plus the browser download helper.
+    - T-P5: no `docs/STYLE.md` yet. Apply the proposal to B components only after it exists; do not invent a palette.
+    - T-S7 (Stretch, not before T-I4): calendar connect/upload on the planner form. Do not start early.
+  - **Blocked on C**
+    - T-C7: "Use demo schedule" loads `mockBusy`; busy-block sort/merge is a stub. Need `lib/schedule-input`.
+    - T-C4: Plan still feeds `mockScheduleResult` into the grid and option cards. Need `schedule()`.
+    - T-C5: diversity seed is `PLACEHOLDER_DIVERSITY_SEED`; Choose only `console.log`s a guest `RunRecord`; Impact uses in-component `mockRuns`. Need `lib/impact` under `gridwait.v1.runs.guest` (try/catch). Do not invent another storage key.
+    - T-C9: `impactModel.ts` is display-only scoring until C's scorer exists. Swap to T-C9; keep the "modeled estimate" / planning-time copy.
+    - T-C8 (CUT): real sign-up / log-in. T-B7 and T-B8 stay cut unless the team un-cuts accounts.
+  - **Not this task:** T-Z4 demo video (already listed under Ship). It waits on T-I4, not on extra UI.
+  - **Done when:** Plan, Home, and Impact no longer depend on `lib/mocks/*` for the demo path; fallback note, Choose → guest history, Add to calendar, and Impact scores all work from the real S/C modules; `npm run lint`, `npm test`, and `npm run build` pass; 375px and desktop still have no horizontal scroll.
 
 ---
 
