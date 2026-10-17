@@ -103,7 +103,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
   - Reads guest history: overall score + band; total CO₂ saved vs. Soonest (negatives shown; kg when ≥ 1000 g); total modeled emissions; counts; band breakdown; runs list newest first (date, appliance, window, CO₂, saved, score + band, rank, status); sort by most recent / most sustainable; mark done, delete; empty state; note that scores use planning-time forecasts and history stays on this device.
   - **Done when:** it renders with mock runs and with an empty history.
 - [x] ~~**T-B7 Sign up**~~ · **CUT** (accounts)
-- [ ] ~~**T-B8 Log in**~~ · **CUT** (accounts)
+- [x] ~~**T-B8 Log in**~~ · **CUT** (accounts)
 - [ ] **T-B9 Wire what B still cannot build** · Then · blocked · branch `b/wire-real` **only after the named deps are merged**
   - Parking lot for UI work that still uses mocks or placeholders. **Do not start.** S leads T-I1, T-I2, and T-I3 and may edit `app/plan/**` and `app/impact/**` after telling B. This task is only the leftover B-folder swaps if those still need a UI owner once the libraries exist. Do not implement `lib/scheduling/**`, `lib/impact/**`, `lib/schedule-input/**`, `lib/grid/**`, `lib/calendar/**`, or `app/api/**`.
   - **Blocked on S**

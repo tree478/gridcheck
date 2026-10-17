@@ -51,6 +51,17 @@ export default function SiteHeader() {
             </ul>
           </nav>
           <Link
+            href="/login"
+            aria-current={isActive(pathname, "/login") ? "page" : undefined}
+            className={`flex min-h-11 items-center px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 ${
+              isActive(pathname, "/login")
+                ? "font-semibold text-zinc-900 dark:text-zinc-50"
+                : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-50"
+            }`}
+          >
+            Log in
+          </Link>
+          <Link
             href="/signup"
             aria-current={isActive(pathname, "/signup") ? "page" : undefined}
             className={`flex min-h-11 items-center px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 ${
