@@ -33,7 +33,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 
 - [x] **T-00 – T-03 Scaffold, rules/docs, original types/constants, mocks, demo .ics** · S
 - [x] **T-04 Folder skeleton** · skipped; B creates the pages in T-B1.
-- [ ] **T-K1 Update shared contract** · All (S drives) · **Must, blocks everyone** · branch `soumya/contract`
+- [x] **T-K1 Update shared contract** · All (S drives) · **Must, blocks everyone** · branch `soumya/contract`
   - Replace `lib/types.ts` and `lib/constants.ts` with PRD §7–§8 exactly (tiers, `forecastMadeAt`, activity catalog with attention type and delay-start, `BusyBlock.asleep`, option labels, `RunRecord`, shared config including `NEAR_TIE_MARGIN = 0.03` and `MAX_DELAY_START_HOURS = 24`).
   - Update `lib/mocks/*` to the new types: a `GridResponse` with `measured` recent hours and 168 `pattern` hours; a student-week `BusyBlock[]` including sleep; a mock `ScheduleResult` with merged labels.
   - Put PRD v2.1 at `docs/PRD.md` and this file at `docs/TODO.md`.
@@ -54,10 +54,10 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
   - `lib/grid/eia.ts`: EIA API v2, respondent `ISNE`, hourly `electricity/rto/fuel-type-data`, **last 28 days**. **Fetch once and print the real field names, fuel codes, and units before writing parsing code.** Handle pagination (max 5,000 rows/request). 8-second timeout. Key from `process.env.EIA_API_KEY`, server only.
   - Skip `region-data` (demand) unless it costs nothing extra; the demand tier is cut.
   - **Done when:** a test prints the last 24 h of fuel rows with UTC periods converted to America/New_York.
-- [ ] **T-S2 Carbon intensity** · Must · branch `soumya/intensity`
+- [x] **T-S2 Carbon intensity** · Must · branch `soumya/intensity`
   - `lib/grid/intensity.ts`: per hour Σ(MWh × factor) ÷ Σ(MWh) using `EMISSION_FACTORS`. Negative MWh → 0. Unknown codes → `OTH`, logged. Hours with no fuel data are dropped, never filled with 0. Output tagged `measured`.
   - **Done when:** tests pass for a hand-calculated hour, negatives, an unknown code, and a missing hour.
-- [ ] **T-S3 Pattern forecast** · Must · branch `soumya/forecast`
+- [x] **T-S3 Pattern forecast** · Must · branch `soumya/forecast`
   - `lib/grid/forecast.ts`: each of the next 168 hours = mean intensity at the same local weekday + hour over the last 4 weeks (3 if a week is missing), tagged `pattern`. Fill the gap between the latest measured hour and now with pattern values.
   - **Done when:** tests pass for length 168, DST-safe alignment, flat in → flat out, and gap fill.
 - [ ] **T-S4 `/api/grid` route** · Must · branch `soumya/api-grid`
@@ -82,28 +82,44 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 
 **Folders:** `app/page.tsx`, `app/plan/**`, `app/impact/**`, `app/about/**`, `components/**`. Build everything against `lib/mocks/*` until integration.
 
-- [ ] **T-B1 App shell** · Must · branch `b/shell`
+- [x] **T-B1 App shell** · Must · branch `b/shell`
   - Header with logo; nav: Home · About · Plan · Impact. **No log-in or sign-up.** Create pages `/`, `/about`, `/plan`, `/impact`.
   - Home: purpose statement, "Plan a run" button, "grid right now" card (latest measured intensity).
   - About: how the forecast works (weekly pattern, last 4 weeks), the honesty statement (PRD §9), and why Recommended may differ from Greenest.
   - **Done when:** all routes are navigable at 375px with no horizontal scroll.
-- [ ] **T-B3 7-day schedule grid** · Must · branch `b/schedule-grid` · **hardest screen; start early**
+- [x] **T-B3 7-day schedule grid** · Must · branch `b/schedule-grid` · **hardest screen; start early**
   - Hour cells colored by intensity (scale = min/max of the 7-day forecast); forecast hours visibly marked as forecast; legend; "Now" marker. Day tabs on mobile, full grid on desktop. Tap a cell to see time, value, and tier.
   - **Done when:** it renders the mock forecast correctly at 375px and 1440px.
-- [ ] **T-B2 Planner form** · Must · branch `b/planner-form`
+- [x] **T-B2 Planner form** · Must · branch `b/planner-form`
   - Pre-fills from catalog defaults. "Use demo schedule" button; busy-block list with "asleep" toggle (add/remove). Multi-select activities with editable duration and energy, and a delay-start toggle where supported. Deadline up to 7 days out. No "Save as my defaults."
   - **Done when:** the form produces a valid `ScheduleRequest` (logged to console) from mock data.
-- [ ] **T-B4 Grid overlays** · Must · branch `b/overlays`
+- [x] **T-B4 Grid overlays** · Must · branch `b/overlays`
   - Busy blocks (sleep in a distinct shade); option blocks labeled Recommended / Greenest / Soonest, one block with combined labels when they coincide; markers for when the user is needed.
   - **Done when:** mock busy blocks and mock options display correctly, including blocks that cross midnight.
-- [ ] **T-B5 Option cards** · Must · branch `b/option-cards` · depends on T-C4 types/mocks
+- [x] **T-B5 Option cards** · Must · branch `b/option-cards` · depends on T-C4 types/mocks
   - Each card: time window, modeled CO₂, % saved vs. Soonest, confidence badge, attention needed, "Add to calendar," "Choose" (saves to guest history). After Choose, remaining activities' options refresh. One-line diversity explanation; "modeled estimate" label; loading, error, and "no valid window" (with suggestion) states. Worst is not shown as a card.
   - **Done when:** all states render with mock data.
-- [ ] **T-B6 Impact dashboard** · Then · branch `b/dashboard` · depends on T-C5, T-C9
+- [x] **T-B6 Impact dashboard** · Then · branch `b/dashboard` · depends on T-C5, T-C9
   - Reads guest history: overall score + band; total CO₂ saved vs. Soonest (negatives shown; kg when ≥ 1000 g); total modeled emissions; counts; band breakdown; runs list newest first (date, appliance, window, CO₂, saved, score + band, rank, status); sort by most recent / most sustainable; mark done, delete; empty state; note that scores use planning-time forecasts and history stays on this device.
   - **Done when:** it renders with mock runs and with an empty history.
-- [ ] ~~**T-B7 Sign up**~~ · **CUT** (accounts)
-- [ ] ~~**T-B8 Log in**~~ · **CUT** (accounts)
+- [x] ~~**T-B7 Sign up**~~ · **CUT** (accounts)
+- [x] ~~**T-B8 Log in**~~ · **CUT** (accounts)
+- [ ] **T-B9 Wire what B still cannot build** · Then · blocked · branch `b/wire-real` **only after the named deps are merged**
+  - Parking lot for UI work that still uses mocks or placeholders. **Do not start.** S leads T-I1, T-I2, and T-I3 and may edit `app/plan/**` and `app/impact/**` after telling B. This task is only the leftover B-folder swaps if those still need a UI owner once the libraries exist. Do not implement `lib/scheduling/**`, `lib/impact/**`, `lib/schedule-input/**`, `lib/grid/**`, `lib/calendar/**`, or `app/api/**`.
+  - **Blocked on S**
+    - T-S4 + T-I1: Home `GridNowCard` and Plan still read `mockGrid` / `MOCK_NOW`. Need `GET /api/grid` and a "Using cached grid data" note when `source === "fallback"`.
+    - T-I2: S wires C's schedule modules into Plan (grid overlays + option cards). B cannot do this until T-C4 and T-C7 exist.
+    - T-S6 + T-I3: "Add to calendar" is `CALENDAR_PLACEHOLDER`. Need `lib/calendar/export.ts` plus the browser download helper.
+    - T-P5: no `docs/STYLE.md` yet. Apply the proposal to B components only after it exists; do not invent a palette.
+    - T-S7 (Stretch, not before T-I4): calendar connect/upload on the planner form. Do not start early.
+  - **Blocked on C**
+    - T-C7: "Use demo schedule" loads `mockBusy`; busy-block sort/merge is a stub. Need `lib/schedule-input`.
+    - T-C4: Plan still feeds `mockScheduleResult` into the grid and option cards. Need `schedule()`.
+    - T-C5: diversity seed is `PLACEHOLDER_DIVERSITY_SEED`; Choose only `console.log`s a guest `RunRecord`; Impact uses in-component `mockRuns`. Need `lib/impact` under `gridwait.v1.runs.guest` (try/catch). Do not invent another storage key.
+    - T-C9: `impactModel.ts` is display-only scoring until C's scorer exists. Swap to T-C9; keep the "modeled estimate" / planning-time copy.
+    - T-C8 (CUT): real sign-up / log-in. T-B7 and T-B8 stay cut unless the team un-cuts accounts.
+  - **Not this task:** T-Z4 demo video (already listed under Ship). It waits on T-I4, not on extra UI.
+  - **Done when:** Plan, Home, and Impact no longer depend on `lib/mocks/*` for the demo path; fallback note, Choose → guest history, Add to calendar, and Impact scores all work from the real S/C modules; `npm run lint`, `npm test`, and `npm run build` pass; 375px and desktop still have no horizontal scroll.
 
 ---
 

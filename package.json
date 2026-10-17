@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "eia:sample": "EIA_LIVE=1 vitest run lib/grid/eia.live.test.ts"
   },
   "dependencies": {
     "ical.js": "^2.2.1",
