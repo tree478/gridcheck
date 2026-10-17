@@ -54,10 +54,10 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
   - `lib/grid/eia.ts`: EIA API v2, respondent `ISNE`, hourly `electricity/rto/fuel-type-data`, **last 28 days**. **Fetch once and print the real field names, fuel codes, and units before writing parsing code.** Handle pagination (max 5,000 rows/request). 8-second timeout. Key from `process.env.EIA_API_KEY`, server only.
   - Skip `region-data` (demand) unless it costs nothing extra; the demand tier is cut.
   - **Done when:** a test prints the last 24 h of fuel rows with UTC periods converted to America/New_York.
-- [ ] **T-S2 Carbon intensity** · Must · branch `soumya/intensity`
+- [x] **T-S2 Carbon intensity** · Must · branch `soumya/intensity`
   - `lib/grid/intensity.ts`: per hour Σ(MWh × factor) ÷ Σ(MWh) using `EMISSION_FACTORS`. Negative MWh → 0. Unknown codes → `OTH`, logged. Hours with no fuel data are dropped, never filled with 0. Output tagged `measured`.
   - **Done when:** tests pass for a hand-calculated hour, negatives, an unknown code, and a missing hour.
-- [ ] **T-S3 Pattern forecast** · Must · branch `soumya/forecast`
+- [x] **T-S3 Pattern forecast** · Must · branch `soumya/forecast`
   - `lib/grid/forecast.ts`: each of the next 168 hours = mean intensity at the same local weekday + hour over the last 4 weeks (3 if a week is missing), tagged `pattern`. Fill the gap between the latest measured hour and now with pattern values.
   - **Done when:** tests pass for length 168, DST-safe alignment, flat in → flat out, and gap fill.
 - [ ] **T-S4 `/api/grid` route** · Must · branch `soumya/api-grid`

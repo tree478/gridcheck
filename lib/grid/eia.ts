@@ -77,6 +77,12 @@ function toEiaPeriod(ms: number): string {
   return new Date(ms).toISOString().slice(0, 13); // YYYY-MM-DDTHH
 }
 
+// New York ISO string for the UTC hour starting at ms.
+// toEiaPeriod always yields a valid period, so the result is never null.
+export function toNewYorkIso(ms: number): string {
+  return eiaPeriodToNewYorkIso(toEiaPeriod(ms)) as string;
+}
+
 // Whole UTC days, so every call on the same UTC day sends an identical query
 // and hits EIA's cache (uncached queries take 60–80 s).
 export function fetchWindow(now: Date): { start: string; end: string } {
