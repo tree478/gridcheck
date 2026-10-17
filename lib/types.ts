@@ -1,69 +1,121 @@
 export type FuelCode = "COL" | "NG" | "NUC" | "OIL" | "WAT" | "SUN" | "WND" | "OTH";
 
+export type Tier = "measured" | "forecast" | "pattern";
+
 export type HourIntensity = {
-  hourStart: string;        // ISO 8601 with offset, America/New_York
+  hourStart: string;          // ISO 8601 with offset, America/New_York
   gco2PerKwh: number;
-  isForecast: boolean;
+  tier: Tier;
 };
 
 export type GridResponse = {
   region: "ISNE";
-  generatedAt: string;      // ISO
-  latestDataHour: string;   // ISO, last hour of actual EIA data
+  generatedAt: string;        // ISO
+  forecastMadeAt: string;     // ISO, when forecast/pattern values were computed
+  latestDataHour: string;     // ISO, last hour of measured data
   source: "live" | "fallback";
-  recent: HourIntensity[];  // last 48 hours of actual data
-  forecast: HourIntensity[];// 168 hours from the current hour
+  recent: HourIntensity[];    // last 48 h, tier "measured"
+  forecast: HourIntensity[];  // 168 h from the current hour, tier "forecast" | "pattern"
 };
 
-export type BusyBlock = { start: string; end: string; title?: string };
-
-export type Appliance = {
-  id: "laundry" | "dryer" | "dishwasher" | "ev" | "custom";
-  name: string;
-  defaultRuntimeMin: number;
-  powerKw: number;          // average draw while running
-  needsPresenceAtStart: boolean;
-  needsPresenceAtEnd: boolean;
-  presenceMinutes: number;  // default 10
-};
-
-export type AvailableHours = { startHour: number; endHour: number }; // e.g. 7, 23
-
-export type ScheduleRequest = {
-  appliance: Appliance;
-  runtimeMin: number;
-  now: string;              // ISO
-  deadline: string;         // ISO, ≤ 7 days from now
-  busy: BusyBlock[];
-  availableHours: AvailableHours;
-  forecast: HourIntensity[];
-  diversitySeed: number;
-};
-
-export type OptionKind = "greenest" | "balanced" | "soonest";
-
-export type ScheduleOption = {
-  kind: OptionKind;
+export type BusyBlock = {
   start: string;
   end: string;
-  modeledGrams: number;
-  diffVsSoonestGrams: number;   // negative = cleaner
-  diffVsSoonestPct: number;
-  presenceWindows: { start: string; end: string }[];
+  asleep: boolean;
+  title?: string;             // session only, never stored
 };
 
-export type ScheduleResult =
-  | { ok: true; options: ScheduleOption[] }
-  | { ok: false; reason: string };
+export type AttentionType = "start" | "startEnd" | "throughout";
 
-export type ImpactLogEntry = {
+export type ActivityId = "washer" | "dryer" | "dishwasher" | "ev" | "laptop" | "custom";
+
+export type Activity = {
+  id: ActivityId;
+  name: string;
+  defaultDurationMin: number;
+  defaultEnergyKwh: number;   // energy per cycle
+  attention: AttentionType;
+  supportsDelayStart: boolean;
+};
+
+export type PlannedActivity = {
+  activity: Activity;
+  durationMin: number;
+  energyKwh: number;
+  delayStart: boolean;
+};
+
+export type FixedRun = {      // an already-chosen run, for multi-appliance re-ranking
+  activityId: ActivityId;
+  start: string;
+  end: string;
+  attendedMoments: { start: string; end: string }[];
+};
+
+export type ScheduleRequest = {
+  items: PlannedActivity[];   // length 1 for single-appliance
+  now: string;                // ISO
+  deadline: string;           // ISO, ≤ 7 days from now
+  busy: BusyBlock[];
+  fixedRuns: FixedRun[];
+  forecast: HourIntensity[];
+  diversitySeed: number;      // stored per device in local storage
+};
+
+export type OptionLabel = "recommended" | "best" | "greenest" | "soonest" | "worst" | "alternative";
+
+export type ScheduleOption = {
+  labels: OptionLabel[];      // merged when options coincide
+  start: string;
+  end: string;
+  loadAt?: string;            // delay-start: when the user loads it
+  modeledGrams: number;
+  savedVsSoonestGrams: number;// Soonest − this; positive = cleaner
+  savedVsSoonestPct: number;
+  confidence: Tier;           // lowest-confidence tier among its slots
+  attendedMoments: { start: string; end: string }[];
+};
+
+export type ActivityResult =
+  | {
+      ok: true;
+      activityId: ActivityId;
+      options: ScheduleOption[];
+      reference: { bestGrams: number; worstGrams: number; soonestGrams: number; greenestGrams: number };
+    }
+  | { ok: false; activityId: ActivityId; reason: string; suggestion?: string };
+
+export type ScheduleResult = { results: ActivityResult[] };
+
+export type RunRecord = {
   id: string;
-  applianceId: Appliance["id"];
+  owner: string;              // "guest" this weekend
+  activityId: ActivityId;
   start: string;
   end: string;
   kwh: number;
-  modeledGrams: number;
-  baselineGrams: number;        // the Soonest option's grams
-  status: "scheduled" | "completed";
+  chosenGrams: number;
+  bestGrams: number;
+  worstGrams: number;
+  soonestGrams: number;
+  confidence: Tier;
+  forecastMadeAt: string;
+  status: "scheduled" | "done";
   createdAt: string;
 };
+
+// Future work (accounts cut this weekend). Keep for reference; nothing imports it yet.
+export type Profile = {
+  username: string;
+  passwordHash: string;       // Web Crypto, never plain text
+  salt: string;
+  createdAt: string;
+  diversitySeed: number;
+  defaults: {
+    activitiesOwned: ActivityId[];
+    delayStart: Partial<Record<ActivityId, boolean>>;
+    sleep: { startHour: number; endHour: number };
+  };
+};
+
+export type ScoreBand = "Top choice" | "Great" | "OK" | "Could be cleaner";
