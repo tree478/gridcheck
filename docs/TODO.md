@@ -131,7 +131,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
   - `docs/PITCH.md`: problem, demo script (PRD §4), honest impact framing (average intensity, small per-load savings, EVs matter most), future work (demand-based forecast and confidence-aware ranking, accounts, shared load balancing, calendar sync). Use what ASUS said about judging.
   - `docs/METHODOLOGY.md`: data source, emission factors, forecast method, scheduling rules, scoring, limitations.
   - **Done when:** the team has read the pitch once together.
-- [ ] **T-C5 Run history** · Then · branch `c/impact-log`
+- [x] **T-C5 Run history** · Then · branch `c/impact-log`
   - `lib/impact/`: local storage under a single "guest" key (keep the key a parameter): save, list (by run start, newest first), mark done, delete. Each run stores chosen, Best, Worst, Soonest grams (planning-time), kWh, window, confidence, `forecastMadeAt`, timestamp. Also stores the diversity seed. try/catch + in-memory fallback.
   - **Done when:** tests pass with mocked storage, including storage that throws.
 - [ ] **T-C9 Scoring** · Then · branch `c/scoring`
