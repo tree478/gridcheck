@@ -114,7 +114,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [x] **T-C1 Slots + activity catalog** · Must · branch `c/slots`
   - Split now → deadline (max 7 days) into 15-min slots from the next boundary, each with its hour's intensity and tier. Activity catalog per PRD §8 (energy per cycle, duration, attention `start` / `startEnd` / `throughout`, delay-start). Laptop preset optional.
   - **Done when:** tests pass for slot count, boundary rounding, and a deadline less than one slot away.
-- [ ] **T-C7 Schedule input** · Must · branch `c/schedule`
+- [x] **T-C7 Schedule input** · Must · branch `c/schedule`
   - `lib/schedule-input/`: demo schedule (student week: classes, job shift, recurring club meeting, sleep, gaps) and helpers to add/remove manual busy blocks with an "asleep" flag. Output sorted, merged `BusyBlock[]` (merged block is asleep only if all parts are).
   - **Done when:** tests pass for merge, sort, and asleep handling.
 - [x] **T-C2 Validity rules** · Must · branch `c/validity`
