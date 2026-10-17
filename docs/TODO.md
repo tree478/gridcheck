@@ -120,7 +120,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [x] **T-C2 Validity rules** · Must · branch `c/validity`
   - Run finishes by the deadline; user free at every attended moment for the attention type; busy and sleep blocks block only attended moments; delay-start loading at any free, non-asleep moment up to 24 h before start; multi-appliance attended moments ≥ 15 min apart.
   - **Done when:** tests cover start blocked, end blocked, busy middle allowed, sleep middle allowed, delay-start load during sleep rejected, past-deadline rejected.
-- [ ] **T-C3 Emissions** · Must · branch `c/emissions`
+- [x] **T-C3 Emissions** · Must · branch `c/emissions`
   - Grams = Σ over slots of (slot intensity × kWh per slot), kWh per slot = energy per cycle ÷ slots in run.
   - **Done when:** tests match a hand calculation, including a run spanning two hours.
 - [x] **T-C4 Ranking** · **Must (single appliance) / Then (multi)** · branch `c/options`
