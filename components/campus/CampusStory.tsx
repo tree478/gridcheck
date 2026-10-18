@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import type { CampusErrorCode, CampusScene, CampusSequenceEvent, CampusVisualResponse } from "@/lib/campus/types";
+import type { CampusErrorCode, CampusScene } from "@/lib/campus/types";
 
 type StoryScene = {
   id: CampusScene;
@@ -42,32 +42,36 @@ type StoryError = {
   scene: CampusScene | null;
 };
 
-function isVisualScene(value: unknown): value is CampusVisualResponse {
-  if (!value || typeof value !== "object") return false;
-  const scene = value as Partial<CampusVisualResponse>;
-  return (
-    (scene.scene === "normal" || scene.scene === "revealed" || scene.scene === "optimized") &&
-    typeof scene.imageDataUrl === "string" &&
-    scene.imageDataUrl.startsWith("data:image/")
-  );
+export type CampusImageSources = Partial<Record<CampusScene, string | null>>;
+
+function readySources(initial: CampusImageSources | undefined): Partial<Record<CampusScene, string>> {
+  const images: Partial<Record<CampusScene, string>> = {};
+  for (const item of SCENES) {
+    const url = initial?.[item.id];
+    if (typeof url === "string" && url.startsWith("/api/campus/image?")) images[item.id] = url;
+  }
+  return images;
 }
 
-function isSequenceEvent(value: unknown): value is CampusSequenceEvent {
-  if (!value || typeof value !== "object") return false;
-  const event = value as { type?: unknown };
-  if (event.type === "scene") return isVisualScene((value as { scene?: unknown }).scene);
-  if (event.type !== "error") return false;
-  const error = value as Partial<Extract<CampusSequenceEvent, { type: "error" }>>;
-  return typeof error.error === "string" && typeof error.code === "string";
+function errorFrom(body: unknown, scene: CampusScene | null): StoryError {
+  const record = body && typeof body === "object" ? (body as { error?: unknown; code?: unknown }) : {};
+  return {
+    error: typeof record.error === "string" ? record.error : "Something went wrong while preparing that scene.",
+    code: typeof record.code === "string" ? (record.code as CampusErrorCode) : "internal",
+    scene,
+  };
 }
 
 export default function CampusStory({
   recommendation,
+  initialImages,
 }: {
   recommendation: CampusRecommendation | null;
+  /** Same-origin paths for scenes already stored on this machine. */
+  initialImages?: CampusImageSources;
 }) {
   const [index, setIndex] = useState(0);
-  const [images, setImages] = useState<Partial<Record<CampusScene, string>>>({});
+  const [images, setImages] = useState<Partial<Record<CampusScene, string>>>(() => readySources(initialImages));
   const [error, setError] = useState<StoryError | null>(null);
   const [attempt, setAttempt] = useState(0);
   const scene = SCENES[index];
@@ -76,98 +80,68 @@ export default function CampusStory({
   const nextReady = nextScene ? Boolean(images[nextScene.id]) : false;
   const pending = SCENES.find((item) => !images[item.id]);
   const pendingNumber = pending ? SCENES.indexOf(pending) + 1 : 0;
+  const normalUrl = initialImages?.normal ?? null;
+  const revealedUrl = initialImages?.revealed ?? null;
+  const optimizedUrl = initialImages?.optimized ?? null;
 
   useEffect(() => {
+    const seeded = readySources({ normal: normalUrl, revealed: revealedUrl, optimized: optimizedUrl });
+    const missing = SCENES.map((item) => item.id).filter((id) => !seeded[id]);
+    if (missing.length === 0) return;
+
     const controller = new AbortController();
     let ignore = false;
 
-    async function loadSequence() {
+    async function loadMissing() {
       setError(null);
-      try {
-        const response = await fetch("/api/campus/visualize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ sequence: true }),
-          signal: controller.signal,
-        });
-        if (!response.ok) {
+      for (const sceneId of missing) {
+        if (ignore) return;
+        try {
+          const response = await fetch("/api/campus/visualize", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ scene: sceneId }),
+            signal: controller.signal,
+          });
           const body: unknown = await response.json().catch(() => null);
-          const record = body && typeof body === "object" ? (body as { error?: unknown; code?: unknown }) : {};
-          if (!ignore) {
-            setError({
-              error:
-                typeof record.error === "string"
-                  ? record.error
-                  : "Something went wrong while preparing that scene.",
-              code: typeof record.code === "string" ? (record.code as CampusErrorCode) : "internal",
-              scene: null,
-            });
+          if (!response.ok) {
+            if (!ignore) setError(errorFrom(body, sceneId));
+            return;
           }
-          return;
-        }
-        if (!response.body) {
+          const imageUrl =
+            body && typeof body === "object" ? (body as { imageUrl?: unknown }).imageUrl : null;
+          if (typeof imageUrl !== "string" || !imageUrl.startsWith("/api/campus/image?")) {
+            if (!ignore) {
+              setError({
+                error: "Something went wrong while preparing that scene.",
+                code: "internal",
+                scene: sceneId,
+              });
+            }
+            return;
+          }
+          if (!ignore) setImages((current) => ({ ...current, [sceneId]: imageUrl }));
+        } catch (err) {
+          if (controller.signal.aborted || ignore) return;
+          if (err instanceof Error && err.name === "AbortError") return;
           if (!ignore) {
             setError({
               error: "Something went wrong while preparing that scene.",
               code: "internal",
-              scene: null,
+              scene: sceneId,
             });
           }
           return;
         }
-
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let buffer = "";
-        while (!ignore) {
-          const chunk = await reader.read();
-          if (chunk.done) break;
-          buffer += decoder.decode(chunk.value, { stream: true });
-          const lines = buffer.split("\n");
-          buffer = lines.pop() ?? "";
-          for (const line of lines) {
-            if (!line.trim()) continue;
-            let parsed: unknown;
-            try {
-              parsed = JSON.parse(line);
-            } catch {
-              if (!ignore) {
-                setError({
-                  error: "Something went wrong while preparing that scene.",
-                  code: "internal",
-                  scene: null,
-                });
-              }
-              return;
-            }
-            if (!isSequenceEvent(parsed)) continue;
-            if (parsed.type === "scene") {
-              const visual = parsed.scene;
-              if (!ignore) {
-                setImages((current) => ({ ...current, [visual.scene]: visual.imageDataUrl }));
-              }
-            } else if (!ignore) {
-              setError({ error: parsed.error, code: parsed.code, scene: parsed.scene });
-            }
-          }
-        }
-      } catch (err) {
-        if (controller.signal.aborted || ignore) return;
-        if (err instanceof Error && err.name === "AbortError") return;
-        setError({
-          error: "Something went wrong while preparing that scene.",
-          code: "internal",
-          scene: null,
-        });
       }
     }
 
-    void loadSequence();
+    void loadMissing();
     return () => {
       ignore = true;
       controller.abort();
     };
-  }, [attempt]);
+  }, [attempt, normalUrl, revealedUrl, optimizedUrl]);
 
   return (
     <section
@@ -178,7 +152,7 @@ export default function CampusStory({
         const src = images[item.id];
         if (!src) return null;
         return (
-          // Data URLs are the generated bytes. The image optimizer cannot fetch them.
+          // Same-origin bytes already stored for this scene. The optimizer cannot fetch this route.
           // eslint-disable-next-line @next/next/no-img-element
           <img
             key={item.id}

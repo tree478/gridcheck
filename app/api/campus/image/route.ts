@@ -4,7 +4,15 @@ import { isCampusScene } from "../../../../lib/campus/scenes";
 
 export async function GET(request: Request) {
   await connection();
-  const scene = new URL(request.url).searchParams.get("scene");
+  let scene: string | null;
+  try {
+    scene = new URL(request.url).searchParams.get("scene");
+  } catch {
+    return Response.json(
+      { error: "Scene must be normal, revealed, or optimized.", code: "invalid_request" },
+      { status: 400, headers: { "Cache-Control": "no-store" } },
+    );
+  }
   if (!isCampusScene(scene)) {
     return Response.json(
       { error: "Scene must be normal, revealed, or optimized.", code: "invalid_request" },

@@ -262,7 +262,7 @@ The forecast in a real request is the same `HourIntensity[]` the planner already
 
 Do not import `lib/campus/imagine.ts`, `lib/campus/cache.ts`, or `lib/campus/visualize.ts` into a client component. They read the server key and the filesystem. `import type` from `lib/campus/types.ts` is safe if you want the response types. Otherwise treat the JSON above as the contract.
 
-`components/campus/CampusStory.tsx` posts `{ "sequence": true }` once, reads the NDJSON stream, and sets each `<img src>` to that scene's `imageDataUrl`. It does not call `GET /api/campus/image`. Next stays disabled until the next scene's data URL has arrived. A `timeout` or `upstream_rate_limited` line shows one Try again button. Other errors do not retry themselves.
+`app/campus/page.tsx` reads the local cache and passes each ready scene's `imageUrl` into `components/campus/CampusStory.tsx`. The story sets `<img src>` to that same-origin path (`GET /api/campus/image`). It does not put `imageDataUrl` in the page. Those data URLs are about 600 KB each, and loading all three into the document stalls the dev server. When a scene is missing, the story POSTs that one scene and then displays the returned `imageUrl`. Next stays disabled until that path has arrived. A `timeout` or `upstream_rate_limited` response shows one Try again button. Other errors do not retry themselves.
 
 Put `title` and `description` in text, not inside the image. The prompts ask for no writing, logos, or watermarks, but the model can still miss. The recommendation card on the last scene is modeled-estimate copy supplied by the page, not pixels from xAI.
 
