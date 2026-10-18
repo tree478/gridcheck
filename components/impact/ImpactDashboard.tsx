@@ -3,6 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import type { RunRecord } from "@/lib/types";
 import {
+  GUEST_RUNS_CHANGED_EVENT,
+  GUEST_RUNS_KEY,
   deleteGuestRun,
   listGuestRuns,
   markGuestRunDone,
@@ -34,6 +36,30 @@ export default function ImpactDashboard() {
     /* eslint-disable react-hooks/set-state-in-effect */
     reload();
     /* eslint-enable react-hooks/set-state-in-effect */
+
+    function onStorage(event: StorageEvent) {
+      if (event.key === GUEST_RUNS_KEY || event.key === null) reload();
+    }
+    function onVisible() {
+      if (document.visibilityState === "visible") reload();
+    }
+    function onPageShow() {
+      reload();
+    }
+    function onRunsChanged() {
+      reload();
+    }
+
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("pageshow", onPageShow);
+    window.addEventListener(GUEST_RUNS_CHANGED_EVENT, onRunsChanged);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("pageshow", onPageShow);
+      window.removeEventListener(GUEST_RUNS_CHANGED_EVENT, onRunsChanged);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
   }, [reload]);
 
   function markDone(id: string) {

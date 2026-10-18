@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { notifyGuestRunsChanged } from "@/components/impact/guestHistory";
 import { ERROR_CLASS } from "@/components/planner/plannerStyles";
 import { browserStore, createRunHistory } from "@/lib/impact/history";
 import type {
@@ -70,6 +71,7 @@ export default function PlanOptions({
         forecastMadeAt,
       });
       createRunHistory(browserStore()).save(draft);
+      notifyGuestRunsChanged();
       setSaveNotes((prev) => ({ ...prev, [activityId]: { kind: "ok" } }));
     } catch {
       setSaveNotes((prev) => ({ ...prev, [activityId]: { kind: "error" } }));

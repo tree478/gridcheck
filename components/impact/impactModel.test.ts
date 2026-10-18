@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  ACTIVITY_CATALOG,
-  NEAR_TIE_MARGIN,
-  SCORE_BANDS,
-} from "../../lib/constants";
+import { ACTIVITY_CATALOG, SCORE_BANDS } from "../../lib/constants";
 import { mockGrid } from "../../lib/mocks/grid";
 import { mockScheduleResult } from "../../lib/mocks/schedule";
 import type { RunRecord } from "../../lib/types";
@@ -61,11 +57,11 @@ function okWasher() {
 }
 
 describe("runScore", () => {
-  it("scores a near-tie of Best as 100", () => {
-    const bestGrams = 100;
-    const chosenGrams = bestGrams * (1 + NEAR_TIE_MARGIN);
-    expect(chosenGrams).toBe(103);
-    expect(runScore({ chosenGrams, bestGrams, worstGrams: 200 })).toBe(100);
+  it("uses the spread formula for a near-tie above Best (no auto-100)", () => {
+    // 3% above Best used to force 100; it should sit on the formula instead.
+    expect(runScore({ chosenGrams: 103, bestGrams: 100, worstGrams: 200 })).toBe(
+      97,
+    );
   });
 
   it("scores 100 when worst is at or below best", () => {
@@ -104,10 +100,21 @@ describe("runScore", () => {
     expect(runScore(record)).toBe(100);
   });
 
-  it("gives the demo-calendar washer Recommended a top-band score", () => {
-    expect(washerRecommendedRun.activityId).toBe("washer");
-    expect(runScore(washerRecommendedRun)).toBeGreaterThanOrEqual(95);
-    expect(bandForScore(runScore(washerRecommendedRun))).toBe("Top choice");
+  it("scores demo Recommended below a perfect Best pick when it is a near-tie", () => {
+    expect(washerRecommendedRun.chosenGrams).toBeGreaterThan(
+      washerRecommendedRun.bestGrams,
+    );
+    const score = runScore(washerRecommendedRun);
+    expect(score).toBeLessThan(100);
+    expect(score).toBeGreaterThan(runScore(evSoonestRun));
+    expect(bandForScore(score)).toBe("Top choice");
+  });
+
+  it("scores Soonest well below Recommended on the demo path", () => {
+    expect(runScore(evSoonestRun)).toBeLessThan(90);
+    expect(runScore(evSoonestRun)).toBeLessThan(
+      runScore(washerRecommendedRun),
+    );
   });
 });
 

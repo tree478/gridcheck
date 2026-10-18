@@ -1,6 +1,7 @@
-// Display-only scoring until T-I3 wires T-C9. Formula is PRD F15 — do not "fix" it.
-// Relative imports so Vitest resolves without a path alias.
-import { NEAR_TIE_MARGIN, SCORE_BANDS, TIMEZONE } from "../../lib/constants";
+// Impact scoring (planning-time grams). Relative imports so Vitest resolves without a path alias.
+// Baseline is Best (= Greenest while all hours are pattern). No near-tie → 100 shortcut:
+// Recommended can sit a few grams above Best and must score below a true Greenest pick.
+import { SCORE_BANDS, TIMEZONE } from "../../lib/constants";
 import type { RunRecord, ScoreBand } from "../../lib/types";
 
 export type SortMode = "recent" | "sustainable";
@@ -29,8 +30,6 @@ export function runScore(
 ): number {
   const { chosenGrams, bestGrams, worstGrams } = run;
   if (worstGrams <= bestGrams) return 100;
-  // Same 3% relative margin C4 uses for Recommended near-ties (PRD F15 / NEAR_TIE_MARGIN).
-  if (chosenGrams <= bestGrams * (1 + NEAR_TIE_MARGIN)) return 100;
   const raw = ((worstGrams - chosenGrams) / (worstGrams - bestGrams)) * 100;
   return Math.min(100, Math.max(0, raw));
 }
