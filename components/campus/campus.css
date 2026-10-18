@@ -1,0 +1,88 @@
+/* Scoped cinematic motion for The Invisible Campus — not global theme tokens. */
+
+@keyframes campus-kenburns {
+  from {
+    transform: scale(1.05) translate3d(0, 0, 0);
+  }
+  to {
+    transform: scale(1.14) translate3d(-1.5%, -1%, 0);
+  }
+}
+
+@keyframes campus-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes campus-pulse-line {
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+  50% {
+    opacity: 0.95;
+  }
+}
+
+@keyframes campus-glow {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 0.85;
+  }
+}
+
+@keyframes campus-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 100% 50%;
+  }
+}
+
+.campus-kenburns {
+  animation: campus-kenburns 18s ease-out forwards;
+  will-change: transform;
+}
+
+.campus-fade-up {
+  animation: campus-fade-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.campus-fade-up-delay {
+  animation: campus-fade-up 1s cubic-bezier(0.22, 1, 0.36, 1) 0.2s both;
+}
+
+.campus-fade-up-delay-2 {
+  animation: campus-fade-up 1s cubic-bezier(0.22, 1, 0.36, 1) 0.45s both;
+}
+
+.campus-pulse {
+  animation: campus-pulse-line 3.2s ease-in-out infinite;
+}
+
+.campus-glow {
+  animation: campus-glow 4s ease-in-out infinite;
+}
+
+.campus-loading-shimmer {
+  background: linear-gradient(
+    110deg,
+    #0a1218 0%,
+    #122433 35%,
+    #1a3a4a 50%,
+    #122433 65%,
+    #0a1218 100%
+  );
+  background-size: 200% 100%;
+  animation: campus-shimmer 2.4s linear infinite;
+}

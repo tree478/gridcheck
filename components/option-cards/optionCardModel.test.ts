@@ -9,10 +9,12 @@ import { formatOptionLabels } from "../schedule-grid/overlays";
 import {
   activityById,
   attentionLines,
+  buildRunDraft,
   cardTitle,
   chosenRecordPreview,
   chosenSummary,
   confidenceLabel,
+  enteredEnergyKwh,
   formatWindow,
   hasRecommendedCard,
   modeledGramsLine,
@@ -150,6 +152,49 @@ describe("modeledGramsLine and confidenceLabel", () => {
     expect(confidenceLabel("pattern")).toBe("Pattern forecast");
     expect(confidenceLabel("forecast")).toBe("Demand forecast");
     expect(confidenceLabel("measured")).toBe("Measured");
+  });
+});
+
+describe("buildRunDraft", () => {
+  it("uses entered energyKwh and the option's and reference's grams", () => {
+    const washerResult = okResult("washer");
+    const recommended = optionWith("washer", "recommended");
+    const enteredKwh = 2.75;
+    const draft = buildRunDraft({
+      activityId: "washer",
+      option: recommended,
+      reference: washerResult.reference,
+      kwh: enteredKwh,
+      forecastMadeAt: mockGrid.forecastMadeAt,
+    });
+    expect(draft).toEqual({
+      activityId: "washer",
+      start: recommended.start,
+      end: recommended.end,
+      kwh: enteredKwh,
+      chosenGrams: recommended.modeledGrams,
+      bestGrams: washerResult.reference.bestGrams,
+      worstGrams: washerResult.reference.worstGrams,
+      soonestGrams: washerResult.reference.soonestGrams,
+      confidence: recommended.confidence,
+      forecastMadeAt: mockGrid.forecastMadeAt,
+    });
+    expect(draft.kwh).not.toBe(washer.defaultEnergyKwh);
+  });
+});
+
+describe("enteredEnergyKwh", () => {
+  it("returns the PlannedActivity energy, not the catalog default", () => {
+    const items = [
+      {
+        activity: washer,
+        durationMin: 60,
+        energyKwh: 1.11,
+        delayStart: false,
+      },
+    ];
+    expect(enteredEnergyKwh(items, "washer")).toBe(1.11);
+    expect(enteredEnergyKwh(items, "dishwasher")).toBeUndefined();
   });
 });
 

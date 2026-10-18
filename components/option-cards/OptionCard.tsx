@@ -3,10 +3,8 @@ import {
   ACCENT_BUTTON,
   HINT_CLASS,
   PRIMARY_BUTTON,
-  SECONDARY_BUTTON,
 } from "@/components/planner/plannerStyles";
 import {
-  CALENDAR_PLACEHOLDER,
   attentionLines,
   cardTitle,
   cardTone,
@@ -101,14 +99,6 @@ export default function OptionCard({ activity, option, onChoose }: Props) {
       </ul>
 
       <div className="mt-4 flex flex-col gap-2 sm:mt-auto sm:flex-row sm:flex-wrap">
-        <button
-          type="button"
-          disabled
-          title={CALENDAR_PLACEHOLDER}
-          className={`${SECONDARY_BUTTON} w-full cursor-not-allowed opacity-70 sm:w-auto`}
-        >
-          Add to calendar
-        </button>
         <button
           type="button"
           onClick={onChoose}
