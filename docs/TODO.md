@@ -38,7 +38,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
   - Update `lib/mocks/*` to the new types: a `GridResponse` with `measured` recent hours and 168 `pattern` hours; a student-week `BusyBlock[]` including sleep; a mock `ScheduleResult` with merged labels.
   - Put PRD v2.1 at `docs/PRD.md` and this file at `docs/TODO.md`.
   - **Done when:** everything compiles, `npm run build` passes, merged to main, and the team has pulled.
-- [ ] **T-05 Deploy** · S · Must · (browser)
+- [x] **T-05 Deploy** · S · Must · (browser)
   - Import the repo into Vercel, add `EIA_API_KEY`, deploy main.
   - **Done when:** the deployed URL loads on all three teammates' phones and the link is shared.
 
@@ -50,7 +50,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 
 **Order:** T-K1 → T-S1 → T-S2 → T-S3 → T-S4 → T-05 → T-I1, T-I2 → T-I4 → T-S6, T-I3 → T-P5 → (stretch) T-S7
 
-- [ ] **T-S1 EIA client** · Must · branch `soumya/eia-client`
+- [x] **T-S1 EIA client** · Must · branch `soumya/eia-client`
   - `lib/grid/eia.ts`: EIA API v2, respondent `ISNE`, hourly `electricity/rto/fuel-type-data`, **last 28 days**. **Fetch once and print the real field names, fuel codes, and units before writing parsing code.** Handle pagination (max 5,000 rows/request). 8-second timeout. Key from `process.env.EIA_API_KEY`, server only.
   - Skip `region-data` (demand) unless it costs nothing extra; the demand tier is cut.
   - **Done when:** a test prints the last 24 h of fuel rows with UTC periods converted to America/New_York.
@@ -60,7 +60,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [x] **T-S3 Pattern forecast** · Must · branch `soumya/forecast`
   - `lib/grid/forecast.ts`: each of the next 168 hours = mean intensity at the same local weekday + hour over the last 4 weeks (3 if a week is missing), tagged `pattern`. Fill the gap between the latest measured hour and now with pattern values.
   - **Done when:** tests pass for length 168, DST-safe alignment, flat in → flat out, and gap fill.
-- [ ] **T-S4 `/api/grid` route** · Must · branch `soumya/api-grid`
+- [x] **T-S4 `/api/grid` route** · Must · branch `soumya/api-grid`
   - `app/api/grid/route.ts` returns `GridResponse` (each hour: `hourStart`, `gco2PerKwh`, `tier`; plus `forecastMadeAt`, `source`). Cache 1 h. On any EIA error or timeout, serve `lib/grid/fallback.json` (a real saved snapshot, re-aligned to start at the current hour) with `source: "fallback"`.
   - **Done when:** valid data on the Vercel preview, and fallback data when the key is deliberately broken locally. **Most important task: the demo must survive bad Wi-Fi.**
 - [ ] **T-S6 Calendar export** · Then · branch `soumya/ics-export`
@@ -161,7 +161,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 
 - [ ] **T-I1 Real grid data** · S · Must · branch `soumya/wire-grid`
   - Planner fetches `/api/grid` instead of mocks; "Using cached grid data" note when `source === "fallback"`.
-- [ ] **T-I2 Schedule wiring** · S · Must · branch `soumya/wire-schedule`
+- [x] **T-I2 Schedule wiring** · S · Must · branch `soumya/wire-schedule`
   - Schedule input (T-C7) → `schedule()` (T-C4) → grid overlays (T-B4) and option cards (T-B5).
 - [ ] **T-I4 Full demo check** · S + All · Must · (testing)
   - PRD §4 flow on two phones + the demo laptop, then again with EIA blocked (fallback).
