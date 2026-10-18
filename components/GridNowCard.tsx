@@ -1,6 +1,10 @@
 import { TIMEZONE } from "@/lib/constants";
-import type { GridResponse, HourIntensity } from "@/lib/types";
+import type { GridResponse } from "@/lib/types";
 import { colorForT } from "@/components/schedule-grid/gridMath";
+import {
+  cleanestWindow,
+  formatWindowLabel,
+} from "@/components/gridNowModel";
 
 type Props = { grid: GridResponse };
 
@@ -9,70 +13,8 @@ const hourOnly = new Intl.DateTimeFormat("en-US", {
   hour: "numeric",
 });
 
-const windowHour = new Intl.DateTimeFormat("en-US", {
-  timeZone: TIMEZONE,
-  hour: "numeric",
-});
-
 function normalizeSpaces(s: string): string {
   return s.replace(/[\u202f\u00a0]/g, " ");
-}
-
-/** Lowest 3-hour stretch among afternoon hours (12–5 PM local). */
-function cleanestWindow(hours: HourIntensity[]): {
-  start: HourIntensity;
-  end: HourIntensity;
-  avg: number;
-} | null {
-  const win = Math.min(3, hours.length);
-  if (win < 2) return null;
-  let bestStart = -1;
-  let bestAvg = Infinity;
-  for (let i = 0; i <= hours.length - win; i++) {
-    const h = localHour(hours[i].hourStart);
-    // Window must sit in the afternoon (start 12–14 → ends by 5 PM)
-    if (h < 12 || h > 14) continue;
-    let sum = 0;
-    for (let j = 0; j < win; j++) sum += hours[i + j].gco2PerKwh;
-    const avg = sum / win;
-    if (avg < bestAvg) {
-      bestAvg = avg;
-      bestStart = i;
-    }
-  }
-  if (bestStart < 0) return null;
-  return {
-    start: hours[bestStart],
-    end: hours[bestStart + win - 1],
-    avg: bestAvg,
-  };
-}
-
-function localHour(iso: string): number {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: TIMEZONE,
-    hour: "numeric",
-    hourCycle: "h23",
-  }).formatToParts(new Date(iso));
-  return Number(parts.find((p) => p.type === "hour")?.value ?? "0");
-}
-
-function formatWindowLabel(startIso: string, endIso: string): string {
-  const start = new Date(startIso);
-  const endInclusive = new Date(Date.parse(endIso) + 60 * 60 * 1000);
-  const a = normalizeSpaces(windowHour.format(start));
-  const b = normalizeSpaces(windowHour.format(endInclusive));
-  const h = localHour(startIso);
-  const prefix =
-    h >= 12 && h < 17
-      ? "this afternoon"
-      : normalizeSpaces(
-          start.toLocaleDateString("en-US", {
-            timeZone: TIMEZONE,
-            weekday: "short",
-          }),
-        );
-  return `${prefix} ${a}–${b}`;
 }
 
 export default function GridNowCard({ grid }: Props) {
@@ -82,6 +24,7 @@ export default function GridNowCard({ grid }: Props) {
   const min = values.length ? Math.min(...values) : 0;
   const max = values.length ? Math.max(...values) : 1;
   const window = cleanestWindow(next24);
+  const nowIso = next24[0]?.hourStart;
 
   const tickIndexes = [0, 3, 6, 9, 12, 15, 18, 21].filter(
     (i) => i < next24.length,
@@ -132,9 +75,9 @@ export default function GridNowCard({ grid }: Props) {
                   const heightPct = 28 + t * 72;
                   const isNow = i === 0;
                   const inBest =
-                    window &&
-                    Date.parse(h.hourStart) >= Date.parse(window.start.hourStart) &&
-                    Date.parse(h.hourStart) <= Date.parse(window.end.hourStart);
+                    window !== null &&
+                    i >= window.startIndex &&
+                    i < window.startIndex + window.length;
                   return (
                     <div
                       key={h.hourStart}
@@ -152,8 +95,9 @@ export default function GridNowCard({ grid }: Props) {
                           height: `${heightPct}%`,
                           backgroundColor: colorForT(t),
                           outline: inBest
-                            ? "1px solid rgba(18, 32, 28, 0.2)"
+                            ? "2px solid var(--primary)"
                             : undefined,
+                          outlineOffset: inBest ? "1px" : undefined,
                         }}
                       />
                     </div>
@@ -200,9 +144,10 @@ export default function GridNowCard({ grid }: Props) {
                   {formatWindowLabel(
                     window.start.hourStart,
                     window.end.hourStart,
+                    nowIso,
                   )}
                 </strong>
-                .                 Intensity then averages about{" "}
+                . Intensity then averages about{" "}
                 {Math.max(0, Math.round(latest.gco2PerKwh - window.avg))}{" "}
                 gCO₂/kWh lower than now — a modeled estimate.
               </p>
