@@ -1,5 +1,6 @@
 "use client";
 
+import type { ChangeEvent } from "react";
 import {
   errorKey,
   type BusyFormBlock,
@@ -22,7 +23,10 @@ type Props = {
   baseId: string;
   blocks: BusyFormBlock[];
   errors: PlannerErrors;
+  importNotice: string | null;
+  importError: string | null;
   onLoadDemo: () => void;
+  onImportFile: (file: File) => void;
   onAdd: () => void;
   onRemove: (key: string) => void;
   onChange: (key: string, patch: Patch) => void;
@@ -32,12 +36,22 @@ export default function BusyBlockFields({
   baseId,
   blocks,
   errors,
+  importNotice,
+  importError,
   onLoadDemo,
+  onImportFile,
   onAdd,
   onRemove,
   onChange,
 }: Props) {
   const asleepCount = blocks.filter((b) => b.asleep).length;
+  const importId = `${baseId}-import`;
+
+  function onFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) onImportFile(file);
+  }
 
   return (
     <fieldset>
@@ -48,14 +62,37 @@ export default function BusyBlockFields({
         and is never uploaded.
       </p>
 
-      <div className="mt-3 flex flex-wrap gap-2">
+      <div className="mt-3 flex min-w-0 flex-wrap gap-2">
         <button type="button" onClick={onLoadDemo} className={SECONDARY_BUTTON}>
           {blocks.length > 0 ? "Reload demo schedule" : "Use demo schedule"}
         </button>
+        <label
+          htmlFor={importId}
+          className={`${SECONDARY_BUTTON} relative max-w-full cursor-pointer overflow-hidden`}
+        >
+          Import calendar (.ics)
+          <input
+            id={importId}
+            type="file"
+            accept=".ics,text/calendar"
+            onChange={onFile}
+            className="absolute inset-0 min-h-11 w-full cursor-pointer opacity-0"
+          />
+        </label>
         <button type="button" onClick={onAdd} className={SECONDARY_BUTTON}>
           Add busy block
         </button>
       </div>
+      {importNotice && (
+        <p role="status" className="mt-3 text-sm text-secondary">
+          {importNotice}
+        </p>
+      )}
+      {importError && (
+        <p role="alert" className={ERROR_CLASS}>
+          {importError}
+        </p>
+      )}
 
       {blocks.length === 0 ? (
         <p className="mt-3 rounded-[var(--radius-button)] border border-dashed border-border p-3 text-sm text-muted">

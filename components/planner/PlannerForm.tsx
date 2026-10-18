@@ -1,10 +1,17 @@
 "use client";
 
-import { useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { parseIcs, type IcsParseResult } from "@/lib/calendar/parse";
 import { MAX_HORIZON_DAYS } from "@/lib/constants";
-import { mockBusy } from "@/lib/mocks/busy";
-import { mockScheduleRequest } from "@/lib/mocks/schedule";
-import type { ActivityId, HourIntensity, ScheduleRequest } from "@/lib/types";
+import { demoSchedule } from "@/lib/schedule-input/schedule";
+import { schedule } from "@/lib/scheduling/schedule";
+import type {
+  ActivityId,
+  BusyBlock,
+  HourIntensity,
+  ScheduleRequest,
+  ScheduleResult,
+} from "@/lib/types";
 import { activityDisplayName } from "@/components/schedule-grid/overlays";
 import ActivityFields from "./ActivityFields";
 import BusyBlockFields from "./BusyBlockFields";
@@ -14,8 +21,10 @@ import {
   defaultFormState,
   emptyBusyBlock,
   errorKey,
+  formBlocksToBusy,
   formatLocal,
   isoToLocal,
+  localToIso,
   maxDeadlineIso,
   validatePlanner,
   type ActivityFormState,
@@ -31,15 +40,26 @@ import {
   PRIMARY_BUTTON,
 } from "./plannerStyles";
 
-// PLACEHOLDER: the per-device seed is owned by run history (T-C5) and wired at integration (T-I2).
-// Until then the form reuses the mock seed so the request shape is complete. No local storage here.
-const PLACEHOLDER_DIVERSITY_SEED = mockScheduleRequest.diversitySeed;
+const AWAKE_NOTICE =
+  "Imported events are treated as awake, and you should mark sleep with the asleep toggle so a run is not scheduled in the middle of the night.";
+
+const GRID_LOADING = "Finding clean times…";
+const GRID_ERROR = "We couldn't build options. Try again.";
+
+type GridStatus = "loading" | "ready" | "error";
+
+type ImportFeedback = { ok: true } | { ok: false; text: string };
 
 type Props = {
-  /** ISO instant treated as "now"(MOCK_NOW until T-I1). */
+  /** ISO instant for this page load. */
   now: string;
-  /** 168 hourly values from the current hour (GridResponse.forecast). */
-  forecast: HourIntensity[];
+  /** Live forecast hours. Null until GET /api/grid succeeds. */
+  forecast: HourIntensity[] | null;
+  gridStatus: GridStatus;
+  diversitySeed: number;
+  onBusyChange: (blocks: BusyBlock[]) => void;
+  onScheduled: (submission: { busy: BusyBlock[]; result: ScheduleResult }) => void;
+  onClearResult: () => void;
 };
 
 type Submitted = {
@@ -49,17 +69,37 @@ type Submitted = {
   deadline: string;
 };
 
-export default function PlannerForm({ now, forecast }: Props) {
+function parseWindow(deadlineLocal: string, now: string): { now: string; deadline: string } {
+  const iso = deadlineLocal ? localToIso(deadlineLocal) : null;
+  const nowMs = Date.parse(now);
+  const deadlineMs = iso ? Date.parse(iso) : Number.NaN;
+  if (iso && Number.isFinite(nowMs) && deadlineMs > nowMs) {
+    return { now, deadline: iso };
+  }
+  return { now, deadline: maxDeadlineIso(now) ?? now };
+}
+
+export default function PlannerForm({
+  now,
+  forecast,
+  gridStatus,
+  diversitySeed,
+  onBusyChange,
+  onScheduled,
+  onClearResult,
+}: Props) {
   const baseId = useId();
-  const [state, setState] = useState<PlannerFormState>(() =>
-    defaultFormState(now),
-  );
+  const [state, setState] = useState<PlannerFormState>(() => defaultFormState(now));
   const [attempted, setAttempted] = useState(false);
   const [submitted, setSubmitted] = useState<Submitted | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
+  const [importFeedback, setImportFeedback] = useState<ImportFeedback | null>(null);
   const manualCounter = useRef(0);
 
-  // Validate on submit, then live until the form is clean again.
+  useEffect(() => {
+    onBusyChange(formBlocksToBusy(state.busy));
+  }, [state.busy, onBusyChange]);
+
   const errors = useMemo(
     () => (attempted ? validatePlanner(state, now) : {}),
     [attempted, state, now],
@@ -106,31 +146,76 @@ export default function PlannerForm({ now, forecast }: Props) {
 
   function loadDemo() {
     setSubmitted(null);
-    // Replaces the current list. Sorting and overlap merging arrive with lib/schedule-input (T-C7).
-    setState((s) => ({ ...s, busy: busyBlocksToForm(mockBusy, "demo") }));
+    setImportFeedback(null);
+    onClearResult();
+    setState((s) => ({ ...s, busy: busyBlocksToForm(demoSchedule(), "demo") }));
+  }
+
+  function onImportFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : "";
+      let parsed: IcsParseResult;
+      try {
+        parsed = parseIcs(text, parseWindow(state.deadlineLocal, now));
+      } catch {
+        setImportFeedback({
+          ok: false,
+          text: `${file.name}: This file could not be read as a calendar.`,
+        });
+        return;
+      }
+      if (!parsed.ok) {
+        setImportFeedback({ ok: false, text: `${file.name}: ${parsed.reason}` });
+        return;
+      }
+      const blocks = parsed.blocks;
+      setImportFeedback({ ok: true });
+      setSubmitted(null);
+      onClearResult();
+      setState((s) => ({ ...s, busy: busyBlocksToForm(blocks, "ics") }));
+    };
+    reader.onerror = () => {
+      setImportFeedback({
+        ok: false,
+        text: `${file.name}: This file could not be read as a calendar.`,
+      });
+    };
+    reader.readAsText(file);
   }
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setAttempted(true);
     setFailure(null);
+    if (gridStatus !== "ready" || forecast === null) {
+      setFailure(gridStatus === "loading" ? GRID_LOADING : GRID_ERROR);
+      return;
+    }
     try {
-      const result = buildScheduleRequest(state, {
+      const built = buildScheduleRequest(state, {
         now,
         forecast,
-        diversitySeed: PLACEHOLDER_DIVERSITY_SEED,
+        diversitySeed,
       });
-      if (!result.ok) {
+      if (!built.ok) {
         setSubmitted(null);
         return;
       }
-      // Acceptance check for T-B2. The request holds mock busy blocks and the forecast, nothing personal.
-      console.log("ScheduleRequest", result.request);
+      const results = built.request.items.flatMap(
+        (item) =>
+          schedule({
+            ...built.request,
+            items: [item],
+            fixedRuns: [],
+          }).results,
+      );
+      onScheduled({ busy: built.request.busy, result: { results } });
       setSubmitted({
-        items: result.request.items,
-        busyCount: result.request.busy.length,
-        asleepCount: result.request.busy.filter((b) => b.asleep).length,
-        deadline: result.request.deadline,
+        items: built.request.items,
+        busyCount: built.request.busy.length,
+        asleepCount: built.request.busy.filter((b) => b.asleep).length,
+        deadline: built.request.deadline,
       });
     } catch {
       setSubmitted(null);
@@ -145,7 +230,7 @@ export default function PlannerForm({ now, forecast }: Props) {
       noValidate
       onSubmit={onSubmit}
       aria-labelledby={`${baseId}-heading`}
-      className="rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-sm sm:p-5"
+      className="min-w-0 rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-sm sm:p-5"
     >
       <h2
         id={`${baseId}-heading`}
@@ -166,7 +251,10 @@ export default function PlannerForm({ now, forecast }: Props) {
           baseId={baseId}
           blocks={state.busy}
           errors={errors}
+          importNotice={importFeedback?.ok ? AWAKE_NOTICE : null}
+          importError={importFeedback && !importFeedback.ok ? importFeedback.text : null}
           onLoadDemo={loadDemo}
+          onImportFile={onImportFile}
           onAdd={addBusy}
           onRemove={removeBusy}
           onChange={updateBusy}
@@ -246,8 +334,9 @@ export default function PlannerForm({ now, forecast }: Props) {
                 </li>
               </ul>
               <p className={`mt-2 ${HINT_CLASS}`}>
-                Recommended times will appear here once the scheduler is
-                connected. For now the request is logged to the browser console.
+                Recommended, greenest, and soonest windows are on the week grid
+                and in the cards below. Every emissions figure is a modeled
+                estimate.
               </p>
             </div>
           )}
