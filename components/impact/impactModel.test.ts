@@ -186,6 +186,8 @@ describe("impactTotals", () => {
     expect(empty.totalSavedGrams).toBe(0);
     expect(empty.totalModeledGrams).toBe(0);
     expect(empty.runCount).toBe(0);
+    expect(empty.scheduledCount).toBe(0);
+    expect(empty.doneCount).toBe(0);
     expect(empty.bandBreakdown).toEqual(
       Object.fromEntries(SCORE_BANDS.map(({ band }) => [band, 0])),
     );

@@ -9,19 +9,18 @@ const TEAM = [
     role: "Frontend & Product Development",
     school: "University of Massachusetts Amherst · 2029",
     bio: "Computer Science, Sustainable Energy & Materials",
-    imageSrc: "/team-miranda-liskov.jpg",
   },
   {
-    name: "[Creator name]",
-    role: "[Role, e.g. Product & UI]",
+    name: "Soumya Shelke",
+    role: "Data and Integration",
     school: "University of Massachusetts Amherst · 2029",
-    bio: "Short bio goes here — what you built this weekend and why the grid matters to you.",
+    bio: "Computer Science, Math, Business",
   },
   {
-    name: "[Creator name]",
-    role: "[Role, e.g. Scheduling & scoring]",
+    name: "Anish Pandey",
+    role: "Backend",
     school: "University of Massachusetts Amherst · 2029",
-    bio: "Short bio goes here — what you built this weekend and why the grid matters to you.",
+    bio: "Computer Science, Math",
   },
 ] as const;
 
@@ -37,7 +36,7 @@ export default function AboutPage() {
             About GridCheck
           </h1>
           <p className="mt-3 max-w-2xl text-body text-secondary md:text-body-desktop">
-            Why we built it, and who built it at HackHarvard 2026.
+            Why we built it, and who built it.
           </p>
         </header>
 

@@ -19,6 +19,8 @@ export type ImpactTotals = {
   totalSavedGrams: number;
   totalModeledGrams: number;
   runCount: number;
+  scheduledCount: number;
+  doneCount: number;
   bandBreakdown: Record<ScoreBand, number>;
 };
 
@@ -77,6 +79,9 @@ export function impactTotals(runs: RunRecord[]): ImpactTotals {
       ? 0
       : rows.reduce((sum, row) => sum + row.score * row.run.kwh, 0) / totalKwh;
 
+  const scheduledCount = runs.filter((run) => run.status === "scheduled").length;
+  const doneCount = runs.filter((run) => run.status === "done").length;
+
   return {
     overallScore,
     overallBand: bandForScore(overallScore),
@@ -86,6 +91,8 @@ export function impactTotals(runs: RunRecord[]): ImpactTotals {
     ),
     totalModeledGrams: runs.reduce((sum, run) => sum + run.chosenGrams, 0),
     runCount: runs.length,
+    scheduledCount,
+    doneCount,
     bandBreakdown: bandBreakdown(rows),
   };
 }

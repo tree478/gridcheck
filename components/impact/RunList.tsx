@@ -24,36 +24,38 @@ export default function RunList({
 }: Props) {
   return (
     <section aria-labelledby="impact-runs-heading" className="mt-8 min-w-0">
-      <h2
-        id="impact-runs-heading"
-        className="text-lg font-semibold text-secondary"
-      >
-        Runs
-      </h2>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2
+          id="impact-runs-heading"
+          className="text-xl font-extrabold tracking-tight text-ink"
+        >
+          Runs
+        </h2>
 
-      <div
-        role="group"
-        aria-label="Sort runs"
-        className="mt-3 flex min-w-0 flex-wrap gap-2"
-      >
-        {SORT_OPTIONS.map((option) => {
-          const selected = sort === option.id;
-          return (
-            <button
-              key={option.id}
-              type="button"
-              onClick={() => onSort(option.id)}
-              aria-pressed={selected}
-              className={`min-h-11 px-3 text-sm ${FOCUS_RING} ${
-                selected
-                  ? "font-semibold text-ink underline decoration-primary underline-offset-4"
-                  : "font-medium text-muted hover:text-ink"
-              }`}
-            >
-              {option.label}
-            </button>
-          );
-        })}
+        <div
+          role="group"
+          aria-label="Sort runs"
+          className="inline-flex rounded-full bg-chip p-1"
+        >
+          {SORT_OPTIONS.map((option) => {
+            const selected = sort === option.id;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                onClick={() => onSort(option.id)}
+                aria-pressed={selected}
+                className={`min-h-10 rounded-full px-3.5 text-sm ${FOCUS_RING} ${
+                  selected
+                    ? "bg-surface font-semibold text-ink shadow-sm"
+                    : "font-medium text-muted hover:text-ink"
+                }`}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {rows.length === 0 ? (
