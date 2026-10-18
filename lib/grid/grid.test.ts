@@ -3,7 +3,7 @@ import { GRID_CACHE_SECONDS } from "../constants";
 import type { HourIntensity } from "../types";
 import { EiaError, toNewYorkIso, type EiaFuelRow } from "./eia";
 import fallbackJson from "./fallback.json";
-import { getGrid, resetGridCache } from "./grid";
+import { getGrid, refreshInBackground, resetGridCache } from "./grid";
 
 const HOUR_MS = 60 * 60 * 1000;
 const FALLBACK = fallbackJson as HourIntensity[];
@@ -111,5 +111,59 @@ describe("getGrid", () => {
     const [a, b] = await Promise.all([getGrid(NOW, fetcher), getGrid(NOW, fetcher)]);
     expect(fetcher).toHaveBeenCalledOnce();
     expect(a).toEqual(b);
+  });
+
+  it("caches fallback for only 2 minutes, then retries EIA", async () => {
+    const fetcher = failing(new EiaError("timeout", "EIA request timed out"));
+    await getGrid(NOW, fetcher);
+    await getGrid(new Date(NOW.getTime() + 119_000), fetcher);
+    expect(fetcher).toHaveBeenCalledOnce();
+    await getGrid(new Date(NOW.getTime() + 120_000), fetcher);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("refreshInBackground", () => {
+  const timeout = () => failing(new EiaError("timeout", "EIA request timed out"));
+
+  it("replaces cached fallback with live data once the slow fetch finishes", async () => {
+    expect((await getGrid(NOW, timeout())).source).toBe("fallback");
+    const slow = live();
+    await refreshInBackground(NOW, slow);
+    expect(slow).toHaveBeenCalledWith({ now: NOW, timeoutMs: 90_000 });
+
+    const requestFetcher = timeout();
+    const grid = await getGrid(new Date(NOW.getTime() + 1000), requestFetcher);
+    expect(grid.source).toBe("live");
+    expect(requestFetcher).not.toHaveBeenCalled();
+  });
+
+  it("runs one refresh at a time and waits 2 minutes between attempts", async () => {
+    let finish: (rows: EiaFuelRow[]) => void = () => {};
+    const slow = vi.fn(() => new Promise<EiaFuelRow[]>((resolve) => (finish = resolve)));
+    const first = refreshInBackground(NOW, slow);
+    expect(first).not.toBeNull();
+    expect(refreshInBackground(NOW, slow)).toBeNull();
+    finish(liveRows(NOW));
+    await first;
+
+    expect(refreshInBackground(new Date(NOW.getTime() + 119_000), slow)).toBeNull();
+    const second = refreshInBackground(new Date(NOW.getTime() + 120_000), slow);
+    expect(second).not.toBeNull();
+    finish(liveRows(NOW));
+    await second;
+    expect(slow).toHaveBeenCalledTimes(2);
+  });
+
+  it("keeps serving fallback when the background fetch fails", async () => {
+    await getGrid(NOW, timeout());
+    await expect(
+      refreshInBackground(NOW, failing(new EiaError("auth", "EIA rejected the API key", 403))),
+    ).resolves.toBeUndefined();
+    expect((await getGrid(new Date(NOW.getTime() + 1000), timeout())).source).toBe("fallback");
+  });
+
+  it("does not throw on errors that are not EiaError", async () => {
+    await expect(refreshInBackground(NOW, failing(new TypeError("bug")))).resolves.toBeUndefined();
   });
 });

@@ -42,3 +42,7 @@ next-env.d.ts
 
 # local Cursor skills (rules stay tracked)
 .cursor/skills/
+
+# generated Invisible Campus images (local reuse; not source)
+.campus-cache/
+.campus-cache-test/
