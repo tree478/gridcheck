@@ -137,9 +137,70 @@ export function desktopVisibleRows(rows: number): number[] {
   return Array.from({ length: rows }, (_, i) => i);
 }
 
-const DRAW_LABELS = new Set<OptionLabel>(["recommended", "greenest", "soonest"]);
+/** Local hour-of-day as a fraction (e.g. 7:30 → 7.5) in America/New_York. */
+export function hourFraction(iso: string, timeZone: string = TIMEZONE): number {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "numeric",
+    minute: "numeric",
+    hourCycle: "h23",
+  }).formatToParts(new Date(iso));
+  const hour = Number(parts.find((p) => p.type === "hour")?.value ?? "0");
+  const minute = Number(parts.find((p) => p.type === "minute")?.value ?? "0");
+  return hour + minute / 60;
+}
 
-/** Draw Recommended, Greenest, and Soonest. Worst and alternatives stay off the grid. */
+/**
+ * Awake window from overnight sleep blocks: wake at sleep.end, bed at sleep.start.
+ * Mock sleep 23:30–07:30 → { startHour: 7.5, endHour: 23.5 }.
+ */
+export function awakeWindowFromBusy(
+  busy: BusyBlock[],
+): { startHour: number; endHour: number } | null {
+  const asleep = busy.filter((b) => b.asleep);
+  if (asleep.length === 0) return null;
+
+  let wakeSum = 0;
+  let bedSum = 0;
+  let overnight = 0;
+  for (const b of asleep) {
+    const wake = hourFraction(b.end);
+    const bed = hourFraction(b.start);
+    // Overnight: bed in the evening, wake in the morning
+    if (bed > wake) {
+      wakeSum += wake;
+      bedSum += bed;
+      overnight += 1;
+    }
+  }
+  if (overnight === 0) return null;
+  return {
+    startHour: wakeSum / overnight,
+    endHour: bedSum / overnight,
+  };
+}
+
+/** Whole-hour rows that overlap [startHour, endHour). */
+export function rowsInAwakeWindow(
+  startHour: number,
+  endHour: number,
+  maxRowExclusive: number,
+): number[] {
+  const out: number[] = [];
+  for (let row = 0; row < maxRowExclusive; row++) {
+    if (row < endHour && row + 1 > startHour) out.push(row);
+  }
+  return out;
+}
+
+/** Busy blocks drawn on the awake calendar (sleep hours are omitted from the grid). */
+export function awakeBusyBlocks(busy: BusyBlock[]): BusyBlock[] {
+  return busy.filter((b) => !b.asleep);
+}
+
+const DRAW_LABELS = new Set<OptionLabel>(["recommended", "greenest"]);
+
+/** Draw Recommended and Greenest only (skip Soonest, Worst, alternatives). */
 export function shouldDrawOption(option: { labels: OptionLabel[] }): boolean {
   return option.labels.some((label) => DRAW_LABELS.has(label));
 }
@@ -162,14 +223,34 @@ export function optionTone(
   return "soonest";
 }
 
-/** UI label: EV + laptop catalog entries show as Device charging. */
+/** UI labels for the planner tiles (catalog names stay unchanged in lib/). */
 export function activityDisplayName(id: ActivityId): string {
-  if (id === "ev" || id === "laptop") return "Device charging";
+  if (id === "ev") return "EV charging";
+  if (id === "laptop") return "Device charging";
   return ACTIVITY_CATALOG.find((a) => a.id === id)?.name ?? id;
 }
 
+export type AwakeWindow = { startHour: number; endHour: number };
+
+/** True when any day-segment of the option overlaps the awake window. */
+export function optionOverlapsAwake(
+  option: ScheduleOption,
+  awake: AwakeWindow,
+  days: GridDay[],
+): boolean {
+  return segmentsForRange(option.start, option.end, days).some((seg) =>
+    rangesOverlap(seg.startHour, seg.endHour, awake.startHour, awake.endHour),
+  );
+}
+
+/**
+ * Recommended always; Greenest only when the run falls while the user is awake.
+ * Pass awake + days to drop overnight Greenest blocks (e.g. 2 AM).
+ */
 export function drawnOptionsFromResult(
   result: ScheduleResult | undefined,
+  awake?: AwakeWindow | null,
+  days?: GridDay[],
 ): DrawnOption[] {
   if (!result) return [];
   const out: DrawnOption[] = [];
@@ -177,8 +258,16 @@ export function drawnOptionsFromResult(
     if (!item.ok) continue;
     const name = activityDisplayName(item.activityId);
     for (const option of item.options) {
-      if (shouldDrawOption(option))
-        out.push({ activityId: item.activityId, name, option });
+      if (!shouldDrawOption(option)) continue;
+      if (
+        optionTone(option.labels) === "greenest" &&
+        awake &&
+        days &&
+        !optionOverlapsAwake(option, awake, days)
+      ) {
+        continue;
+      }
+      out.push({ activityId: item.activityId, name, option });
     }
   }
   return out;

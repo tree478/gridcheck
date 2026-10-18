@@ -1,5 +1,6 @@
 import type { Activity, ScheduleOption } from "@/lib/types";
 import {
+  ACCENT_BUTTON,
   HINT_CLASS,
   PRIMARY_BUTTON,
   SECONDARY_BUTTON,
@@ -20,22 +21,22 @@ import {
 } from "@/components/schedule-grid/overlays";
 
 const TONE_SHELL = {
-  recommended: "border-l-4 border-l-primary bg-primary-tint",
-  greenest: "border-l-4 border-l-primary bg-transparent",
-  soonest: "border-l-4 border-l-ink bg-transparent",
+  recommended: "border-l-4 border-l-scale-dirty bg-scale-dirty/10",
+  greenest: "border-l-4 border-l-primary bg-primary-tint",
+  soonest: "border-l-4 border-l-primary/40 bg-transparent",
   alternative: "border-l-4 border-l-border bg-transparent",
 };
 
 const TITLE_CLASS = {
-  recommended: "text-2xl font-bold text-primary",
+  recommended: "text-2xl font-bold text-scale-dirty",
   greenest: "text-lg font-semibold text-primary",
-  soonest: "text-lg font-semibold text-ink",
+  soonest: "text-lg font-semibold text-primary",
   alternative: "text-base font-medium text-secondary",
 };
 
 const CONFIDENCE_CLASS = {
-  pattern: "border-dashed border-input text-secondary",
-  forecast: "border-solid border-ink text-ink",
+  pattern: "border-dashed border-primary/40 text-primary",
+  forecast: "border-solid border-scale-dirty text-scale-dirty",
   measured: "border-solid border-primary text-primary",
 };
 
@@ -43,15 +44,9 @@ type Props = {
   activity: Activity;
   option: ScheduleOption;
   onChoose: () => void;
-  calendarHintId: string;
 };
 
-export default function OptionCard({
-  activity,
-  option,
-  onChoose,
-  calendarHintId,
-}: Props) {
+export default function OptionCard({ activity, option, onChoose }: Props) {
   const tone = cardTone(option.labels);
   const title = cardTitle(option.labels);
   const weekday = formatWeekday(option.start);
@@ -100,7 +95,7 @@ export default function OptionCard({
       </p>
 
       <ul className={`mt-3 space-y-1 ${HINT_CLASS}`}>
-        {attentionLines(activity, option).map((line) => (
+        {attentionLines(activity).map((line) => (
           <li key={line}>{line}</li>
         ))}
       </ul>
@@ -109,14 +104,16 @@ export default function OptionCard({
         <button
           type="button"
           disabled
-          aria-describedby={calendarHintId}
           title={CALENDAR_PLACEHOLDER}
           className={`${SECONDARY_BUTTON} w-full cursor-not-allowed opacity-70 sm:w-auto`}
         >
           Add to calendar
-          <span className="sr-only">. {CALENDAR_PLACEHOLDER}</span>
         </button>
-        <button type="button" onClick={onChoose} className={PRIMARY_BUTTON}>
+        <button
+          type="button"
+          onClick={onChoose}
+          className={isRecommended ? ACCENT_BUTTON : PRIMARY_BUTTON}
+        >
           Choose {activityDisplayName(activity.id)}
         </button>
       </div>

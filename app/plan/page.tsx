@@ -11,8 +11,8 @@ export default function PlanPage() {
           Plan a run
         </h1>
         <p className="mt-3 max-w-2xl text-body text-secondary md:text-body-desktop">
-          Pick what to run, when you&apos;re busy, and a deadline. Then choose a
-          recommended window on the week ahead.
+          Three quick steps. We&apos;ll find the cleanest times that fit around
+          your week.
         </p>
         <PlanWorkspace />
       </div>

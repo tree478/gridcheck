@@ -21,7 +21,8 @@ type Props = {
   forecastMadeAt: string;
 };
 
-export default function PlanOptions({ status, result }: Props) {
+export default function PlanOptions({ status, result, forecastMadeAt }: Props) {
+  void forecastMadeAt;
   const calendarHintId = useId();
   const [chosen, setChosen] = useState<
     Partial<Record<ActivityId, ScheduleOption>>
@@ -73,7 +74,6 @@ export default function PlanOptions({ status, result }: Props) {
               key={item.activityId}
               result={item}
               chosen={chosen[item.activityId] ?? null}
-              calendarHintId={calendarHintId}
               onChoose={(option) => {
                 handleChoose(item.activityId, option);
               }}
