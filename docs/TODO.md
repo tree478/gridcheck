@@ -166,8 +166,9 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 - [ ] **T-I4 Full demo check** · S + All · Must · (testing)
   - PRD §4 flow on two phones + the demo laptop, then again with EIA blocked (fallback).
   - **Done when:** both runs work with no console errors. **Target 5 PM.**
-- [ ] **T-I3 Choose flow** · S · Then · branch `soumya/wire-choose`
+- [x] **T-I3 Choose flow** · S · Then · branch `soumya/wire-choose`
   - "Choose" saves to guest history (T-C5); "Add to calendar" downloads `.ics` (T-S6); dashboard reads real history + scores (T-C9).
+  - Done as B on `miranda/frontend`: Choose → guest history; Impact reads real history; Add to calendar hidden (T-S6 not tonight); grid fetch timeout + retry.
 
 ---
 

@@ -60,7 +60,11 @@ type Props = {
   gridStatus: GridStatus;
   diversitySeed: number;
   onBusyChange: (blocks: BusyBlock[]) => void;
-  onScheduled: (submission: { busy: BusyBlock[]; result: ScheduleResult }) => void;
+  onScheduled: (submission: {
+    busy: BusyBlock[];
+    result: ScheduleResult;
+    items: ScheduleRequest["items"];
+  }) => void;
   onClearResult: () => void;
 };
 
@@ -235,7 +239,11 @@ export default function PlannerForm({
       const results = built.request.items.flatMap(
         (item) => byId.get(item.activity.id) ?? [],
       );
-      onScheduled({ busy: built.request.busy, result: { results } });
+      onScheduled({
+        busy: built.request.busy,
+        result: { results },
+        items: built.request.items,
+      });
       setSubmitted({
         items: built.request.items,
         busyCount: built.request.busy.length,

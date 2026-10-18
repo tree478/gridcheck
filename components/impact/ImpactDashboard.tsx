@@ -1,6 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import type { RunRecord } from "@/lib/types";
+import {
+  deleteGuestRun,
+  listGuestRuns,
+  markGuestRunDone,
+  openGuestHistory,
+} from "./guestHistory";
 import {
   impactTotals,
   scoredRuns,
@@ -8,29 +15,53 @@ import {
   type SortMode,
 } from "./impactModel";
 import ImpactSummary from "./ImpactSummary";
-import { mockRuns } from "./mockRuns";
 import RunList from "./RunList";
 
 export default function ImpactDashboard() {
-  // T-I3 will replace this in-component mock state with T-C5 guest history
-  // (gridwait.v1.runs.guest) and T-C9 scoring. Do not invent another storage key.
   const [sort, setSort] = useState<SortMode>("recent");
-  const [runs, setRuns] = useState(mockRuns);
+  const [runs, setRuns] = useState<RunRecord[] | null>(null);
 
-  const rows = sortRuns(scoredRuns(runs), sort);
-  const totals = impactTotals(runs);
+  const reload = useCallback(() => {
+    try {
+      setRuns(listGuestRuns(openGuestHistory()));
+    } catch {
+      setRuns([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    // Load after mount so SSR HTML matches the first client paint.
+    /* eslint-disable react-hooks/set-state-in-effect */
+    reload();
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, [reload]);
 
   function markDone(id: string) {
-    setRuns((prev) =>
-      prev.map((run) =>
-        run.id === id ? { ...run, status: "done" as const } : run,
-      ),
-    );
+    try {
+      setRuns(markGuestRunDone(openGuestHistory(), id));
+    } catch {
+      reload();
+    }
   }
 
   function deleteRun(id: string) {
-    setRuns((prev) => prev.filter((run) => run.id !== id));
+    try {
+      setRuns(deleteGuestRun(openGuestHistory(), id));
+    } catch {
+      reload();
+    }
   }
+
+  if (runs === null) {
+    return (
+      <p role="status" className="mt-6 text-secondary">
+        Loading your runs…
+      </p>
+    );
+  }
+
+  const rows = sortRuns(scoredRuns(runs), sort);
+  const totals = impactTotals(runs);
 
   return (
     <div className="mt-6 min-w-0">
@@ -42,6 +73,10 @@ export default function ImpactDashboard() {
         onMarkDone={markDone}
         onDelete={deleteRun}
       />
+      <p className="mt-6 text-sm text-muted">
+        Scores use the forecast from when you planned each run. History stays on
+        this device.
+      </p>
     </div>
   );
 }
