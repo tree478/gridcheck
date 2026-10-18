@@ -151,8 +151,8 @@ describe("visualizeCampus", () => {
     expect(first.scheduleContext).toBeNull();
     expect(first.title).toBe("The Campus We See");
     expect(first.imageExpiresAt).toBeNull();
+    expect(first.imageDataUrl).toBe(`data:image/png;base64,${B64}`);
     expect(JSON.stringify(first)).not.toContain(KEY);
-    expect(JSON.stringify(first)).not.toContain(B64);
 
     const sent = outbound();
     expect(sent.url).toBe(IMAGINE_GENERATIONS_URL);
@@ -419,6 +419,105 @@ describe("HTTP routes", () => {
     expect(image.headers.get("content-type")).toBe("image/png");
     expect(Buffer.from(await image.arrayBuffer()).toString()).toBe("hello");
     expect(JSON.stringify(payload)).not.toContain(KEY);
+  });
+
+  function sequenceRequest(body: Record<string, unknown> = { sequence: true }) {
+    return new Request("http://localhost/api/campus/visualize", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+  }
+
+  async function readNdjson(response: Response): Promise<unknown[]> {
+    const text = await response.text();
+    return text
+      .split("\n")
+      .filter((line) => line.trim().length > 0)
+      .map((line) => JSON.parse(line) as unknown);
+  }
+
+  it("streams normal, revealed, and optimized in one request", async () => {
+    const response = await POST(sequenceRequest());
+    expect(response.status).toBe(200);
+    expect(response.headers.get("content-type")).toContain("application/x-ndjson");
+    const lines = await readNdjson(response);
+    expect(lines).toHaveLength(3);
+    expect(fetchMock).toHaveBeenCalledTimes(3);
+    const scenes = lines.map((line) => {
+      expect(line).toMatchObject({ type: "scene" });
+      return (line as { scene: { scene: string; imageDataUrl: string; continuity: string; cached: boolean } }).scene;
+    });
+    expect(scenes.map((item) => item.scene)).toEqual(["normal", "revealed", "optimized"]);
+    expect(scenes[0].continuity).toBe("text-to-image");
+    expect(scenes[1].continuity).toBe("edited-from-normal");
+    expect(scenes[2].continuity).toBe("edited-from-normal");
+    for (const item of scenes) {
+      expect(item.imageDataUrl.startsWith("data:image/")).toBe(true);
+      expect(item.cached).toBe(false);
+    }
+    expect(outbound(0).url).toBe(IMAGINE_GENERATIONS_URL);
+    expect(outbound(1).url).toBe(IMAGINE_EDITS_URL);
+    expect(outbound(2).url).toBe(IMAGINE_EDITS_URL);
+    expect(JSON.stringify(lines)).not.toContain(KEY);
+  });
+
+  it("replays a sequence from cache without calling xAI", async () => {
+    const first = await POST(sequenceRequest());
+    await readNdjson(first);
+    fetchMock.mockClear();
+    const response = await POST(sequenceRequest());
+    const lines = await readNdjson(response);
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(lines).toHaveLength(3);
+    for (const line of lines) {
+      expect(line).toMatchObject({ type: "scene", scene: { cached: true } });
+    }
+  });
+
+  it("rejects a sequence that also sends a prompt, an image, or a scene", async () => {
+    const prompt = await POST(sequenceRequest({ sequence: true, prompt: "a cat in a hat" }));
+    const image = await POST(sequenceRequest({ sequence: true, image: "data:image/png;base64,aaaa" }));
+    const scene = await POST(sequenceRequest({ sequence: true, scene: "normal" }));
+    expect(prompt.status).toBe(400);
+    expect(image.status).toBe(400);
+    expect(scene.status).toBe(400);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("reports a missing key for a sequence without calling the image service", async () => {
+    vi.stubEnv("XAI_API_KEY", "");
+    const response = await POST(sequenceRequest());
+    expect(response.status).toBe(503);
+    const body = await response.json();
+    expect(body).toMatchObject({
+      code: "missing_credentials",
+      error: "Image generation is not configured on the server.",
+    });
+    expect(JSON.stringify(body)).not.toContain(KEY);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("emits the finished scene and one error when a later scene fails", async () => {
+    let calls = 0;
+    fetchMock.mockImplementation(async () => {
+      calls += 1;
+      if (calls === 2) return jsonResponse({ error: `leak ${KEY}` }, 500);
+      return generated();
+    });
+    const response = await POST(sequenceRequest());
+    expect(response.status).toBe(200);
+    const lines = await readNdjson(response);
+    expect(lines).toHaveLength(2);
+    expect(lines[0]).toMatchObject({ type: "scene", scene: { scene: "normal", continuity: "text-to-image" } });
+    expect(lines[1]).toMatchObject({
+      type: "error",
+      code: "upstream_unavailable",
+      scene: "revealed",
+      error: "The image service could not generate that scene right now.",
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(JSON.stringify(lines)).not.toContain(KEY);
   });
 
   it("reports cache status without generating", async () => {

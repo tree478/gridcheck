@@ -41,6 +41,11 @@ export function takeGenerationSlot(now = Date.now()): void {
   generationTimes.push(now);
 }
 
+/** Throws missing_credentials when the server has no xAI key. Does not return the key. */
+export function assertCampusCredentials(): void {
+  readApiKey();
+}
+
 function readApiKey(): string {
   if (typeof window !== "undefined") {
     throw new CampusError(

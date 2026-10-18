@@ -14,6 +14,8 @@ import type {
 } from "./types";
 import { CAMPUS_SCENES } from "./types";
 
+export type CampusPostKind = "sequence" | "scene";
+
 const DISALLOWED = new Set([
   "prompt",
   "image",
@@ -66,6 +68,30 @@ export function parseVisualizeRequest(body: unknown): VisualizeRequest {
   };
 }
 
+/** Sequence is one field. Scene, force, scheduleRequest, prompts, and images stay on the single-scene request. */
+export function classifyCampusPost(body: unknown): CampusPostKind {
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    throw invalidRequest("Request body must be a JSON object.");
+  }
+  const record = body as Record<string, unknown>;
+  for (const key of Object.keys(record)) {
+    if (DISALLOWED.has(key)) {
+      throw invalidRequest(
+        "This endpoint only generates the three campus scenes. It does not accept a prompt or a reference image.",
+      );
+    }
+    if (key !== "sequence" && !ALLOWED.has(key)) throw invalidRequest(`Unexpected field "${key}".`);
+  }
+  if (record.sequence === undefined) return "scene";
+  if (record.sequence !== true) throw invalidRequest("sequence must be true.");
+  for (const key of Object.keys(record)) {
+    if (key !== "sequence") {
+      throw invalidRequest("A sequence request only accepts sequence: true.");
+    }
+  }
+  return "sequence";
+}
+
 export function campusImagePath(scene: CampusScene, generatedAt: string): string {
   return `/api/campus/image?scene=${scene}&v=${encodeURIComponent(generatedAt)}`;
 }
@@ -80,6 +106,7 @@ function toResponse(
   return {
     scene,
     imageUrl: campusImagePath(scene, image.generatedAt),
+    imageDataUrl: `data:${image.mimeType};base64,${Buffer.from(image.bytes).toString("base64")}`,
     mimeType: image.mimeType,
     imageExpiresAt: null,
     persistence: campusPersistence(),
@@ -118,6 +145,12 @@ async function getOrCreateImage(scene: CampusScene, force: boolean): Promise<{ i
   } finally {
     if (inflight.get(scene) === job) inflight.delete(scene);
   }
+}
+
+/** One scene inside a sequence. Schedule text stays off this path; the page already has its own card. */
+export async function visualizeSequenceScene(scene: CampusScene): Promise<CampusVisualResponse> {
+  const image = await getOrCreateImage(scene, false);
+  return toResponse(scene, image.image, image.cached, null);
 }
 
 export async function visualizeCampus(body: unknown): Promise<CampusVisualResponse> {
