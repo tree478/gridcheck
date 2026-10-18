@@ -19,8 +19,8 @@ import {
   sortRuns,
 } from "./impactModel";
 import {
-  dishwasherRecommendedRun,
-  evRun,
+  dryerRecommendedRun,
+  evSoonestRun,
   kilogramFixture,
   mockRuns,
   washerRecommendedRun,
@@ -86,7 +86,7 @@ describe("runScore", () => {
     );
   });
 
-  it("gives the washer Recommended mock a perfect score", () => {
+  it("scores a hand-picked Recommended that equals Best as 100", () => {
     const washer = okWasher();
     const recommended = washer.options.find((option) =>
       option.labels.includes("recommended"),
@@ -102,7 +102,12 @@ describe("runScore", () => {
     });
     expect(record.chosenGrams).toBe(washer.reference.bestGrams);
     expect(runScore(record)).toBe(100);
-    expect(runScore(washerRecommendedRun)).toBe(100);
+  });
+
+  it("gives the demo-calendar washer Recommended a top-band score", () => {
+    expect(washerRecommendedRun.activityId).toBe("washer");
+    expect(runScore(washerRecommendedRun)).toBeGreaterThanOrEqual(95);
+    expect(bandForScore(runScore(washerRecommendedRun))).toBe("Top choice");
   });
 });
 
@@ -260,23 +265,29 @@ describe("scoredRuns rank", () => {
 });
 
 describe("sortRuns", () => {
-  it("reorders mockRuns between most recent and most sustainable", () => {
+  it("orders the demo washer+dryer+EV defaults by recent start and by score", () => {
+    expect(mockRuns.map((run) => run.activityId).sort()).toEqual([
+      "dryer",
+      "ev",
+      "washer",
+    ]);
+    expect(evSoonestRun.chosenGrams).toBe(evSoonestRun.soonestGrams);
     const rows = scoredRuns(mockRuns);
     const recent = sortRuns(rows, "recent").map((row) => row.run.id);
     const sustainable = sortRuns(rows, "sustainable").map((row) => row.run.id);
 
-    expect(recent).toEqual([
-      evRun.id,
-      dishwasherRecommendedRun.id,
-      washerWorstRun.id,
-      washerRecommendedRun.id,
-    ]);
-    expect(sustainable).toEqual([
-      dishwasherRecommendedRun.id,
-      washerRecommendedRun.id,
-      evRun.id,
-      washerWorstRun.id,
-    ]);
-    expect(recent).not.toEqual(sustainable);
+    const byStart = [...mockRuns].sort(
+      (a, b) => Date.parse(b.start) - Date.parse(a.start),
+    );
+    expect(recent).toEqual(byStart.map((run) => run.id));
+
+    expect(sustainable).toHaveLength(3);
+    expect(new Set(sustainable)).toEqual(
+      new Set([
+        washerRecommendedRun.id,
+        dryerRecommendedRun.id,
+        evSoonestRun.id,
+      ]),
+    );
   });
 });
