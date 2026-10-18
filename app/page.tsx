@@ -56,12 +56,6 @@ export default function Home() {
               >
                 How it works
               </a>
-              <Link
-                href="/campus"
-                className="inline-flex min-h-11 items-center text-body font-medium text-ink underline decoration-border underline-offset-4 hover:decoration-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary md:text-body-desktop"
-              >
-                The invisible campus
-              </Link>
             </div>
           </div>
 
