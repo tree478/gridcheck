@@ -119,6 +119,27 @@ export function emptyBusyBlock(key: string): BusyFormBlock {
   return { key, startLocal: "", endLocal: "", asleep: false };
 }
 
+/** Form rows that already have a real start and end, for the week grid before submit. */
+export function formBlocksToBusy(
+  blocks: BusyFormBlock[],
+  timeZone: string = TIMEZONE,
+): BusyBlock[] {
+  const busy: BusyBlock[] = [];
+  for (const block of blocks) {
+    const start = localToIso(block.startLocal, timeZone);
+    const end = localToIso(block.endLocal, timeZone);
+    if (!start || !end) continue;
+    if (Date.parse(end) <= Date.parse(start)) continue;
+    busy.push({
+      start,
+      end,
+      asleep: block.asleep,
+      ...(block.title ? { title: block.title } : {}),
+    });
+  }
+  return busy;
+}
+
 // ---------- Time zone math (Intl only, never the machine's local zone) ----------
 
 type LocalParts = {

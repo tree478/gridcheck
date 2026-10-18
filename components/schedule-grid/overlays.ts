@@ -137,9 +137,9 @@ export function desktopVisibleRows(rows: number): number[] {
   return Array.from({ length: rows }, (_, i) => i);
 }
 
-const DRAW_LABELS = new Set<OptionLabel>(["recommended", "greenest"]);
+const DRAW_LABELS = new Set<OptionLabel>(["recommended", "greenest", "soonest"]);
 
-/** Draw Recommended and Greenest only (skip Soonest, Worst, alternatives). */
+/** Draw Recommended, Greenest, and Soonest. Worst and alternatives stay off the grid. */
 export function shouldDrawOption(option: { labels: OptionLabel[] }): boolean {
   return option.labels.some((label) => DRAW_LABELS.has(label));
 }

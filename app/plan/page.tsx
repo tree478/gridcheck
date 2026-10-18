@@ -1,10 +1,5 @@
 import type { Metadata } from "next";
-import PlanOptions from "@/components/option-cards/PlanOptions";
-import PlannerForm from "@/components/planner/PlannerForm";
-import ScheduleGrid from "@/components/schedule-grid/ScheduleGrid";
-import { mockBusy } from "@/lib/mocks/busy";
-import { MOCK_NOW, mockGrid } from "@/lib/mocks/grid";
-import { mockNoWindowResult, mockScheduleResult } from "@/lib/mocks/schedule";
+import PlanWorkspace from "@/components/plan/PlanWorkspace";
 
 export const metadata: Metadata = { title: "Plan a run · GridCheck" };
 
@@ -19,22 +14,7 @@ export default function PlanPage() {
           Pick what to run, when you&apos;re busy, and a deadline. Then choose a
           recommended window on the week ahead.
         </p>
-        <div className="mt-8">
-          <PlannerForm now={MOCK_NOW} forecast={mockGrid.forecast} />
-        </div>
-        <div className="mt-10">
-          <ScheduleGrid
-            hours={mockGrid.forecast}
-            now={MOCK_NOW}
-            busy={mockBusy}
-            result={mockScheduleResult}
-          />
-        </div>
-        <PlanOptions
-          result={mockScheduleResult}
-          noWindowResult={mockNoWindowResult}
-          forecastMadeAt={mockGrid.forecastMadeAt}
-        />
+        <PlanWorkspace />
       </div>
     </div>
   );

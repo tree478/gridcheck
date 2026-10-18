@@ -169,8 +169,8 @@ describe("segmentStyle", () => {
 });
 
 describe("option drawing", () => {
-  it("draws recommended/greenest and skips soonest/worst/alternative", () => {
-    expect(shouldDrawOption({ labels: ["soonest"] })).toBe(false);
+  it("draws recommended, greenest, and soonest, and skips worst and alternatives", () => {
+    expect(shouldDrawOption({ labels: ["soonest"] })).toBe(true);
     expect(
       shouldDrawOption({ labels: ["recommended", "best", "greenest"] }),
     ).toBe(true);
@@ -201,8 +201,18 @@ describe("option drawing", () => {
     ).toEqual([
       {
         id: "washer",
+        labels: ["soonest"],
+        start: "2026-10-18T09:15:00-04:00",
+      },
+      {
+        id: "washer",
         labels: ["recommended", "best", "greenest"],
         start: "2026-10-18T13:00:00-04:00",
+      },
+      {
+        id: "dishwasher",
+        labels: ["soonest"],
+        start: "2026-10-18T09:15:00-04:00",
       },
       {
         id: "dishwasher",
