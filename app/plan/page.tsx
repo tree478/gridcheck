@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import PlanWorkspace from "@/components/plan/PlanWorkspace";
 
 export const metadata: Metadata = { title: "Plan a run · GridCheck" };
@@ -15,6 +16,14 @@ export default function PlanPage() {
           your week.
         </p>
         <PlanWorkspace />
+        <div className="mt-10 flex justify-end">
+          <Link
+            href="/impact"
+            className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-button)] bg-primary px-6 text-btn font-bold text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+          >
+            View your impact →
+          </Link>
+        </div>
       </div>
     </div>
   );
