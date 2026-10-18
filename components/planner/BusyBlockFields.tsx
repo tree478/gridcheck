@@ -1,166 +1,228 @@
 "use client";
 
-import { useId, useRef, useState } from "react";
-import type { BusyBlock } from "@/lib/types";
-import { busyBlocksToForm, type BusyFormBlock } from "./plannerModel";
-import { icsHorizonMs, parseIcsToBusyBlocks } from "./icsBusy";
-import { ERROR_CLASS, HINT_CLASS } from "./plannerStyles";
+import type { ChangeEvent } from "react";
+import {
+  errorKey,
+  type BusyFormBlock,
+  type PlannerErrors,
+} from "./plannerModel";
+import {
+  CHECKBOX_CLASS,
+  ERROR_CLASS,
+  FOCUS_RING,
+  HINT_CLASS,
+  INPUT_CLASS,
+  INPUT_ERROR,
+  INPUT_OK,
+  LABEL_CLASS,
+  SECONDARY_BUTTON,
+} from "./plannerStyles";
+
+type Patch = Partial<Pick<BusyFormBlock, "startLocal" | "endLocal" | "asleep">>;
 
 type Props = {
-  now: string;
+  baseId: string;
   blocks: BusyFormBlock[];
-  onBusyLoaded: (blocks: BusyFormBlock[], fileName: string) => void;
-  onClear: () => void;
+  errors: PlannerErrors;
+  importNotice: string | null;
+  importError: string | null;
+  onLoadDemo: () => void;
+  onImportFile: (file: File) => void;
+  onAdd: () => void;
   onRemove: (key: string) => void;
+  onChange: (key: string, patch: Patch) => void;
 };
 
 export default function BusyBlockFields({
-  now,
+  baseId,
   blocks,
-  onBusyLoaded,
-  onClear,
+  errors,
+  importNotice,
+  importError,
+  onLoadDemo,
+  onImportFile,
+  onAdd,
   onRemove,
+  onChange,
 }: Props) {
-  const inputId = useId();
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [fileName, setFileName] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [busyReading, setBusyReading] = useState(false);
+  const asleepCount = blocks.filter((b) => b.asleep).length;
+  const importId = `${baseId}-import`;
 
-  async function onFileChange(file: File | null) {
-    setError(null);
-    if (!file) return;
-    if (!file.name.toLowerCase().endsWith(".ics")) {
-      setError("Please choose a .ics calendar file.");
-      return;
-    }
-    setBusyReading(true);
-    try {
-      const text = await file.text();
-      const { startMs, endMs } = icsHorizonMs(now);
-      let parsed: BusyBlock[];
-      try {
-        parsed = parseIcsToBusyBlocks(text, startMs, endMs);
-      } catch {
-        setError(
-          `We couldn't read ${file.name}. Make sure it's a valid .ics file.`,
-        );
-        setBusyReading(false);
-        return;
-      }
-      if (parsed.length === 0) {
-        setError(
-          `${file.name} had no timed busy events in the next week. All-day and free events are skipped.`,
-        );
-        setBusyReading(false);
-        return;
-      }
-      setFileName(file.name);
-      onBusyLoaded(busyBlocksToForm(parsed, "ics"), file.name);
-    } catch {
-      setError("Something went wrong reading that file. Try again.");
-    } finally {
-      setBusyReading(false);
-    }
+  function onFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) onImportFile(file);
   }
+
+  // Demo / add-manual stay available to PlannerForm but are not shown — step 02 is .ics only.
+  void onLoadDemo;
+  void onAdd;
 
   return (
     <fieldset className="rounded-[var(--radius-card)] border border-border bg-surface p-5 shadow-sm sm:p-6">
       <legend className="float-left w-full">
         <span className="flex items-baseline gap-2">
-          <span className="font-mono text-sm font-semibold text-primary">
-            02
-          </span>
+          <span className="font-mono text-sm font-semibold text-primary">02</span>
           <span className="text-xl font-semibold tracking-tight text-ink">
             When are you busy?
           </span>
         </span>
       </legend>
-      <p className="clear-both mt-1 text-sm text-secondary">
+      <p className={`clear-both mt-1 text-sm text-secondary`}>
         Upload a calendar file so options land when you can do them. Must be a{" "}
         <strong className="font-semibold text-ink">.ics</strong> file. Your
         calendar stays in this browser tab and is never uploaded to our servers.
       </p>
 
-      <div className="mt-5 flex flex-wrap items-center gap-3">
-        <input
-          ref={inputRef}
-          id={inputId}
-          type="file"
-          accept=".ics,text/calendar"
-          className="sr-only"
-          onChange={(e) => onFileChange(e.target.files?.[0] ?? null)}
-        />
-        <button
-          type="button"
-          disabled={busyReading}
-          onClick={() => inputRef.current?.click()}
-          className="inline-flex min-h-11 items-center justify-center rounded-[var(--radius-button)] bg-primary px-5 text-sm font-bold text-white hover:bg-primary-hover focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary disabled:opacity-60"
+      <div className="mt-5 flex min-w-0 flex-wrap items-center gap-3">
+        <label
+          htmlFor={importId}
+          className={`inline-flex min-h-11 cursor-pointer items-center justify-center rounded-[var(--radius-button)] bg-primary px-5 text-sm font-bold text-white hover:bg-primary-hover ${FOCUS_RING}`}
         >
-          {busyReading ? "Reading…" : "Upload .ics calendar"}
-        </button>
-        {fileName ? (
-          <button
-            type="button"
-            onClick={() => {
-              setFileName(null);
-              setError(null);
-              if (inputRef.current) inputRef.current.value = "";
-              onClear();
-            }}
-            className="text-sm font-medium text-muted underline-offset-2 hover:text-ink hover:underline"
-          >
-            Clear {fileName}
-          </button>
-        ) : (
-          <span className={HINT_CLASS}>Accepts .ics only</span>
-        )}
+          Upload .ics calendar
+          <input
+            id={importId}
+            type="file"
+            accept=".ics,text/calendar"
+            onChange={onFile}
+            className="sr-only"
+          />
+        </label>
+        <span className={HINT_CLASS}>Accepts .ics only</span>
       </div>
-
-      {error ? (
-        <p role="alert" className={`mt-3 ${ERROR_CLASS}`}>
-          {error}
+      {importNotice && (
+        <p role="status" className="mt-3 text-sm text-secondary">
+          {importNotice}
         </p>
-      ) : null}
+      )}
+      {importError && (
+        <p role="alert" className={ERROR_CLASS}>
+          {importError}
+        </p>
+      )}
 
-      {blocks.length > 0 ? (
-        <ul className="mt-4 space-y-0 overflow-hidden rounded-[var(--radius-input)] border border-border bg-chip/50">
-          {blocks.map((b) => (
-            <li
-              key={b.key}
-              className="flex items-start justify-between gap-3 border-b border-border px-4 py-3 last:border-b-0"
-            >
-              <div className="flex min-w-0 gap-3">
-                <span
-                  aria-hidden
-                  className="mt-0.5 w-1 shrink-0 self-stretch rounded-full bg-busy"
-                />
-                <div className="min-w-0">
-                  <p className="text-sm font-semibold text-ink">
-                    {b.title ?? "Busy"}
-                  </p>
-                  <p className={`mt-0.5 ${HINT_CLASS}`}>
-                    {b.startLocal.replace("T", " · ")} →{" "}
-                    {b.endLocal.replace("T", " · ")}
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => onRemove(b.key)}
-                aria-label={`Remove ${b.title ?? "busy block"}`}
-                className="flex size-9 shrink-0 items-center justify-center rounded-full text-muted hover:bg-surface hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-              >
-                ×
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : (
+      {blocks.length === 0 ? (
         <p className="mt-4 rounded-[var(--radius-button)] border border-dashed border-border px-4 py-3 text-sm text-muted">
           No calendar loaded yet. Choose a <strong>.ics</strong> file to
           continue.
         </p>
+      ) : (
+        <>
+          <p className={`mt-3 ${HINT_CLASS}`} aria-live="polite">
+            {blocks.length} {blocks.length === 1 ? "block" : "blocks"}
+            {asleepCount > 0 && ` · ${asleepCount} asleep`}
+          </p>
+          <ul className="mt-2 space-y-2">
+            {blocks.map((b, index) => {
+              const startId = `${baseId}-busy-${b.key}-start`;
+              const endId = `${baseId}-busy-${b.key}-end`;
+              const asleepId = `${baseId}-busy-${b.key}-asleep`;
+              const startError = errors[errorKey.busyStart(b.key)];
+              const endError = errors[errorKey.busyEnd(b.key)];
+              const name = b.title ?? `Busy block ${index + 1}`;
+
+              return (
+                <li
+                  key={b.key}
+                  className={`rounded-[var(--radius-card)] border p-3 ${
+                    b.asleep
+                      ? "border-sleep bg-sleep"
+                      : "border-border bg-surface"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="min-w-0 text-sm font-medium">
+                      <span className="break-words">{name}</span>
+                      {b.asleep && (
+                        <span className="ml-2 inline-block rounded bg-sleep px-1.5 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-white">
+                          Asleep
+                        </span>
+                      )}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => onRemove(b.key)}
+                      aria-label={`Remove ${name}`}
+                      className={`${SECONDARY_BUTTON} -mt-1 -mr-1 shrink-0 px-3`}
+                    >
+                      Remove
+                    </button>
+                  </div>
+
+                  <div className="mt-2 grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor={startId} className={LABEL_CLASS}>
+                        Starts
+                      </label>
+                      <input
+                        id={startId}
+                        type="datetime-local"
+                        value={b.startLocal}
+                        onChange={(e) =>
+                          onChange(b.key, { startLocal: e.target.value })
+                        }
+                        aria-invalid={startError ? true : undefined}
+                        aria-describedby={
+                          startError ? `${startId}-error` : undefined
+                        }
+                        className={`mt-1 ${INPUT_CLASS} ${startError ? INPUT_ERROR : INPUT_OK}`}
+                      />
+                      {startError && (
+                        <p id={`${startId}-error`} className={ERROR_CLASS}>
+                          {startError}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      <label htmlFor={endId} className={LABEL_CLASS}>
+                        Ends
+                      </label>
+                      <input
+                        id={endId}
+                        type="datetime-local"
+                        value={b.endLocal}
+                        onChange={(e) =>
+                          onChange(b.key, { endLocal: e.target.value })
+                        }
+                        aria-invalid={endError ? true : undefined}
+                        aria-describedby={
+                          endError ? `${endId}-error` : undefined
+                        }
+                        className={`mt-1 ${INPUT_CLASS} ${endError ? INPUT_ERROR : INPUT_OK}`}
+                      />
+                      {endError && (
+                        <p id={`${endId}-error`} className={ERROR_CLASS}>
+                          {endError}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  <label
+                    htmlFor={asleepId}
+                    className="mt-1 flex min-h-11 cursor-pointer items-center gap-3"
+                  >
+                    <input
+                      id={asleepId}
+                      type="checkbox"
+                      checked={b.asleep}
+                      onChange={(e) =>
+                        onChange(b.key, { asleep: e.target.checked })
+                      }
+                      className={CHECKBOX_CLASS}
+                    />
+                    <span className="text-sm">
+                      <span className="font-medium">I&apos;m asleep</span>
+                      <span className={`block ${HINT_CLASS}`}>
+                        Runs can continue while you sleep; loading can&apos;t.
+                      </span>
+                    </span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+        </>
       )}
     </fieldset>
   );

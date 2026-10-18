@@ -1,22 +1,27 @@
 "use client";
 
-import { useId, useMemo, useState, type FormEvent } from "react";
+import { useEffect, useId, useMemo, useRef, useState, type FormEvent } from "react";
+import { parseIcs, type IcsParseResult } from "@/lib/calendar/parse";
 import { MAX_HORIZON_DAYS } from "@/lib/constants";
-import { mockScheduleRequest } from "@/lib/mocks/schedule";
+import { demoSchedule } from "@/lib/schedule-input/schedule";
+import { schedule } from "@/lib/scheduling/schedule";
 import type {
   ActivityId,
   BusyBlock,
   HourIntensity,
   ScheduleRequest,
+  ScheduleResult,
 } from "@/lib/types";
 import { activityDisplayName } from "@/components/schedule-grid/overlays";
 import ActivityFields from "./ActivityFields";
 import BusyBlockFields from "./BusyBlockFields";
 import {
   buildScheduleRequest,
-  busyFormToBlocks,
+  busyBlocksToForm,
   defaultFormState,
+  emptyBusyBlock,
   errorKey,
+  formBlocksToBusy,
   formatLocal,
   isoToLocal,
   localToIso,
@@ -35,13 +40,26 @@ import {
   PRIMARY_BUTTON,
 } from "./plannerStyles";
 
-const PLACEHOLDER_DIVERSITY_SEED = mockScheduleRequest.diversitySeed;
+const AWAKE_NOTICE =
+  "Imported events are treated as awake, and you should mark sleep with the asleep toggle so a run is not scheduled in the middle of the night.";
+
+const GRID_LOADING = "Finding clean times…";
+const GRID_ERROR = "We couldn't build options. Try again.";
+
+type GridStatus = "loading" | "ready" | "error";
+
+type ImportFeedback = { ok: true } | { ok: false; text: string };
 
 type Props = {
+  /** ISO instant for this page load. */
   now: string;
-  forecast: HourIntensity[];
-  /** Fires whenever uploaded busy blocks change (empty until a .ics is loaded). */
-  onBusyChange?: (busy: BusyBlock[]) => void;
+  /** Live forecast hours. Null until GET /api/grid succeeds. */
+  forecast: HourIntensity[] | null;
+  gridStatus: GridStatus;
+  diversitySeed: number;
+  onBusyChange: (blocks: BusyBlock[]) => void;
+  onScheduled: (submission: { busy: BusyBlock[]; result: ScheduleResult }) => void;
+  onClearResult: () => void;
 };
 
 type Submitted = {
@@ -51,59 +69,36 @@ type Submitted = {
   deadline: string;
 };
 
-type DeadlinePreset = "tonight" | "tomorrow" | "latest";
-
-function attentionSidebarLabel(item: ActivityFormState): string {
-  if (item.delayStart && item.activity.supportsDelayStart) {
-    return "Can run overnight";
+function parseWindow(deadlineLocal: string, now: string): { now: string; deadline: string } {
+  const iso = deadlineLocal ? localToIso(deadlineLocal) : null;
+  const nowMs = Date.parse(now);
+  const deadlineMs = iso ? Date.parse(iso) : Number.NaN;
+  if (iso && Number.isFinite(nowMs) && deadlineMs > nowMs) {
+    return { now, deadline: iso };
   }
-  if (item.activity.attention === "startEnd") return "Start + finish";
-  if (item.activity.attention === "throughout") return "Needed throughout";
-  return "At the start";
+  return { now, deadline: maxDeadlineIso(now) ?? now };
 }
 
-function splitDeadlineLocal(local: string): { date: string; time: string } {
-  if (!local.includes("T")) return { date: "", time: "" };
-  const [date, time] = local.split("T");
-  return { date: date ?? "", time: (time ?? "").slice(0, 5) };
-}
-
-function joinDeadlineLocal(date: string, time: string): string {
-  if (!date) return "";
-  return `${date}T${time || "21:00"}`;
-}
-
-function addLocalDays(nowIso: string, days: number): string {
-  const parts = splitDeadlineLocal(isoToLocal(nowIso) ?? "");
-  if (!parts.date) return "";
-  const [y, m, d] = parts.date.split("-").map(Number);
-  const dt = new Date(Date.UTC(y, m - 1, d + days));
-  const date = `${dt.getUTCFullYear()}-${String(dt.getUTCMonth() + 1).padStart(2, "0")}-${String(dt.getUTCDate()).padStart(2, "0")}`;
-  return joinDeadlineLocal(date, "21:00");
-}
-
-function formatPresetSub(local: string): string {
-  const iso = localToIso(local);
-  if (!iso) return "";
-  return formatLocal(iso)
-    .replace(/, \d{4}/, "")
-    .replace(/:00(?=\s|$)/, "");
-}
-
-export default function PlannerForm({ now, forecast, onBusyChange }: Props) {
+export default function PlannerForm({
+  now,
+  forecast,
+  gridStatus,
+  diversitySeed,
+  onBusyChange,
+  onScheduled,
+  onClearResult,
+}: Props) {
   const baseId = useId();
-  const [state, setState] = useState<PlannerFormState>(() =>
-    defaultFormState(now),
-  );
+  const [state, setState] = useState<PlannerFormState>(() => defaultFormState(now));
   const [attempted, setAttempted] = useState(false);
   const [submitted, setSubmitted] = useState<Submitted | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
-  const [activePreset, setActivePreset] = useState<DeadlinePreset | null>(null);
-  const [calendarFileName, setCalendarFileName] = useState<string | null>(null);
+  const [importFeedback, setImportFeedback] = useState<ImportFeedback | null>(null);
+  const manualCounter = useRef(0);
 
-  function publishBusy(blocks: BusyFormBlock[]) {
-    onBusyChange?.(busyFormToBlocks(blocks));
-  }
+  useEffect(() => {
+    onBusyChange(formBlocksToBusy(state.busy));
+  }, [state.busy, onBusyChange]);
 
   const errors = useMemo(
     () => (attempted ? validatePlanner(state, now) : {}),
@@ -112,41 +107,10 @@ export default function PlannerForm({ now, forecast, onBusyChange }: Props) {
   const errorCount = Object.keys(errors).length;
 
   const deadlineId = `${baseId}-deadline`;
-  const dateId = `${baseId}-deadline-date`;
-  const timeId = `${baseId}-deadline-time`;
   const deadlineError = errors[errorKey.deadline];
+  const deadlineMin = isoToLocal(now) ?? undefined;
   const maxIso = maxDeadlineIso(now);
-  const { date: deadlineDate, time: deadlineTime } = splitDeadlineLocal(
-    state.deadlineLocal,
-  );
-
-  const selected = state.activities.filter((a) => a.selected);
-  const asleepCount = state.busy.filter((b) => b.asleep).length;
-  const awakeBusy = state.busy.length - asleepCount;
-  const deadlineIso = localToIso(state.deadlineLocal);
-  const forecastHours =
-    deadlineIso && Number.isFinite(Date.parse(deadlineIso))
-      ? Math.max(
-          0,
-          Math.round(
-            (Date.parse(deadlineIso) - Date.parse(now)) / (60 * 60 * 1000),
-          ),
-        )
-      : 0;
-
-  const tonightLocal = addLocalDays(now, 0);
-  const tomorrowLocal = addLocalDays(now, 1);
-  const latestLocal = maxIso ? (isoToLocal(maxIso) ?? "") : "";
-
-  const presets: {
-    id: DeadlinePreset;
-    label: string;
-    local: string;
-  }[] = [
-    { id: "tonight", label: "Tonight", local: tonightLocal },
-    { id: "tomorrow", label: "Tomorrow", local: tomorrowLocal },
-    { id: "latest", label: "Latest", local: latestLocal },
-  ];
+  const deadlineMax = maxIso ? (isoToLocal(maxIso) ?? undefined) : undefined;
 
   function updateActivity(id: ActivityId, patch: Partial<ActivityFormState>) {
     setSubmitted(null);
@@ -158,55 +122,100 @@ export default function PlannerForm({ now, forecast, onBusyChange }: Props) {
     }));
   }
 
+  function updateBusy(key: string, patch: Partial<BusyFormBlock>) {
+    setSubmitted(null);
+    setState((s) => ({
+      ...s,
+      busy: s.busy.map((b) => (b.key === key ? { ...b, ...patch } : b)),
+    }));
+  }
+
   function removeBusy(key: string) {
     setSubmitted(null);
-    setState((s) => {
-      const busy = s.busy.filter((b) => b.key !== key);
-      publishBusy(busy);
-      return { ...s, busy };
-    });
+    setState((s) => ({ ...s, busy: s.busy.filter((b) => b.key !== key) }));
   }
 
-  function onBusyLoaded(blocks: BusyFormBlock[], fileName: string) {
+  function addBusy() {
     setSubmitted(null);
-    setCalendarFileName(fileName);
-    setState((s) => ({ ...s, busy: blocks }));
-    publishBusy(blocks);
+    manualCounter.current += 1;
+    setState((s) => ({
+      ...s,
+      busy: [...s.busy, emptyBusyBlock(`manual-${manualCounter.current}`)],
+    }));
   }
 
-  function clearBusy() {
+  function loadDemo() {
     setSubmitted(null);
-    setCalendarFileName(null);
-    setState((s) => ({ ...s, busy: [] }));
-    publishBusy([]);
+    setImportFeedback(null);
+    onClearResult();
+    setState((s) => ({ ...s, busy: busyBlocksToForm(demoSchedule(), "demo") }));
   }
 
-  function setDeadlineLocal(deadlineLocal: string, preset: DeadlinePreset | null) {
-    setSubmitted(null);
-    setActivePreset(preset);
-    setState((s) => ({ ...s, deadlineLocal }));
+  function onImportFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const text = typeof reader.result === "string" ? reader.result : "";
+      let parsed: IcsParseResult;
+      try {
+        parsed = parseIcs(text, parseWindow(state.deadlineLocal, now));
+      } catch {
+        setImportFeedback({
+          ok: false,
+          text: `${file.name}: This file could not be read as a calendar.`,
+        });
+        return;
+      }
+      if (!parsed.ok) {
+        setImportFeedback({ ok: false, text: `${file.name}: ${parsed.reason}` });
+        return;
+      }
+      const blocks = parsed.blocks;
+      setImportFeedback({ ok: true });
+      setSubmitted(null);
+      onClearResult();
+      setState((s) => ({ ...s, busy: busyBlocksToForm(blocks, "ics") }));
+    };
+    reader.onerror = () => {
+      setImportFeedback({
+        ok: false,
+        text: `${file.name}: This file could not be read as a calendar.`,
+      });
+    };
+    reader.readAsText(file);
   }
 
   function onSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setAttempted(true);
     setFailure(null);
+    if (gridStatus !== "ready" || forecast === null) {
+      setFailure(gridStatus === "loading" ? GRID_LOADING : GRID_ERROR);
+      return;
+    }
     try {
-      const result = buildScheduleRequest(state, {
+      const built = buildScheduleRequest(state, {
         now,
         forecast,
-        diversitySeed: PLACEHOLDER_DIVERSITY_SEED,
+        diversitySeed,
       });
-      if (!result.ok) {
+      if (!built.ok) {
         setSubmitted(null);
         return;
       }
-      console.log("ScheduleRequest", result.request);
+      const results = built.request.items.flatMap(
+        (item) =>
+          schedule({
+            ...built.request,
+            items: [item],
+            fixedRuns: [],
+          }).results,
+      );
+      onScheduled({ busy: built.request.busy, result: { results } });
       setSubmitted({
-        items: result.request.items,
-        busyCount: result.request.busy.length,
-        asleepCount: result.request.busy.filter((b) => b.asleep).length,
-        deadline: result.request.deadline,
+        items: built.request.items,
+        busyCount: built.request.busy.length,
+        asleepCount: built.request.busy.filter((b) => b.asleep).length,
+        deadline: built.request.deadline,
       });
     } catch {
       setSubmitted(null);
@@ -221,13 +230,16 @@ export default function PlannerForm({ now, forecast, onBusyChange }: Props) {
       noValidate
       onSubmit={onSubmit}
       aria-labelledby={`${baseId}-heading`}
-      className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(16rem,20rem)] lg:items-start lg:gap-8"
+      className="min-w-0 rounded-[var(--radius-card)] border border-border bg-surface p-4 shadow-sm sm:p-5"
     >
-      <h2 id={`${baseId}-heading`} className="sr-only">
+      <h2
+        id={`${baseId}-heading`}
+        className="text-sm font-semibold uppercase tracking-wide text-muted"
+      >
         Planner
       </h2>
 
-      <div className="space-y-5">
+      <div className="mt-5 space-y-8">
         <ActivityFields
           baseId={baseId}
           items={state.activities}
@@ -236,190 +248,100 @@ export default function PlannerForm({ now, forecast, onBusyChange }: Props) {
         />
 
         <BusyBlockFields
-          now={now}
+          baseId={baseId}
           blocks={state.busy}
-          onBusyLoaded={onBusyLoaded}
-          onClear={clearBusy}
+          errors={errors}
+          importNotice={importFeedback?.ok ? AWAKE_NOTICE : null}
+          importError={importFeedback && !importFeedback.ok ? importFeedback.text : null}
+          onLoadDemo={loadDemo}
+          onImportFile={onImportFile}
+          onAdd={addBusy}
           onRemove={removeBusy}
+          onChange={updateBusy}
         />
 
-        <fieldset className="rounded-[var(--radius-card)] border border-border bg-surface p-5 shadow-sm sm:p-6">
-          <legend className="float-left w-full">
-            <span className="flex items-baseline gap-2">
-              <span className="font-mono text-sm font-semibold text-primary">
-                03
-              </span>
-              <span className="text-xl font-semibold tracking-tight text-ink">
-                When does it need to be done?
-              </span>
-            </span>
-          </legend>
-          <p className="clear-both mt-1 text-sm text-secondary">
-            Later deadlines open more clean hours. Up to {MAX_HORIZON_DAYS} days
-            out.
+        <div>
+          <label htmlFor={deadlineId} className="text-base font-semibold">
+            When does it need to be done by?
+          </label>
+          <p className={`mt-1 ${HINT_CLASS}`}>
+            Up to {MAX_HORIZON_DAYS} days out
+            {maxIso ? `, by ${formatLocal(maxIso)}` : ""}. Eastern time.
           </p>
-
-          <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-            {presets.map((p) => {
-              const selectedPreset = activePreset === p.id;
-              return (
-                <button
-                  key={p.id}
-                  type="button"
-                  disabled={!p.local}
-                  onClick={() => setDeadlineLocal(p.local, p.id)}
-                  className={`min-h-14 rounded-[var(--radius-button)] border px-2 py-2 text-left focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-                    selectedPreset
-                      ? "border-ink bg-ink text-white"
-                      : "border-border bg-surface text-ink hover:border-primary/40"
-                  }`}
-                >
-                  <span className="block text-sm font-semibold">{p.label}</span>
-                  <span
-                    className={`mt-0.5 block text-[11px] ${
-                      selectedPreset ? "text-white/80" : "text-muted"
-                    }`}
-                  >
-                    {p.local ? formatPresetSub(p.local) : "—"}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-end gap-3">
-            <div>
-              <label htmlFor={dateId} className="block text-sm font-medium text-ink">
-                Date
-              </label>
-              <input
-                id={dateId}
-                type="date"
-                value={deadlineDate}
-                onChange={(e) =>
-                  setDeadlineLocal(
-                    joinDeadlineLocal(e.target.value, deadlineTime || "21:00"),
-                    null,
-                  )
-                }
-                className={`mt-1 ${INPUT_CLASS} ${deadlineError ? INPUT_ERROR : INPUT_OK}`}
-              />
-            </div>
-            <div>
-              <label htmlFor={timeId} className="block text-sm font-medium text-ink">
-                Time
-              </label>
-              <input
-                id={timeId}
-                type="time"
-                value={deadlineTime}
-                onChange={(e) =>
-                  setDeadlineLocal(
-                    joinDeadlineLocal(deadlineDate, e.target.value),
-                    null,
-                  )
-                }
-                className={`mt-1 ${INPUT_CLASS} ${deadlineError ? INPUT_ERROR : INPUT_OK}`}
-              />
-            </div>
-            <p className={`pb-3 ${HINT_CLASS}`}>Eastern time</p>
-          </div>
           <input
             id={deadlineId}
-            type="hidden"
+            type="datetime-local"
             value={state.deadlineLocal}
-            readOnly
+            min={deadlineMin}
+            max={deadlineMax}
+            onChange={(e) => {
+              setSubmitted(null);
+              const deadlineLocal = e.target.value;
+              setState((s) => ({ ...s, deadlineLocal }));
+            }}
+            aria-invalid={deadlineError ? true : undefined}
+            aria-describedby={deadlineError ? `${deadlineId}-error` : undefined}
+            className={`mt-2 sm:max-w-xs ${INPUT_CLASS} ${deadlineError ? INPUT_ERROR : INPUT_OK}`}
           />
           {deadlineError && (
             <p id={`${deadlineId}-error`} className={ERROR_CLASS}>
               {deadlineError}
             </p>
           )}
-        </fieldset>
+        </div>
       </div>
 
-      <aside className="mt-5 lg:sticky lg:top-6 lg:mt-0">
-        <div className="rounded-[var(--radius-card)] border border-border bg-surface p-5 shadow-sm sm:p-6">
-          <h3 className="text-lg font-semibold text-ink">Your plan</h3>
-
-          <div className="mt-5 space-y-4 text-sm">
-            <div>
-              <p className="font-mono text-[11px] font-semibold uppercase tracking-wide text-muted">
-                Running
-              </p>
-              {selected.length === 0 ? (
-                <p className="mt-1 text-secondary">Nothing selected yet</p>
-              ) : (
-                <ul className="mt-1 space-y-1 text-ink">
-                  {selected.map((item) => (
-                    <li key={item.activity.id}>
-                      <span className="font-medium">
-                        {activityDisplayName(item.activity.id)}
-                      </span>
-                      : {attentionSidebarLabel(item)}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
-
-            <div>
-              <p className="font-mono text-[11px] font-semibold uppercase tracking-wide text-muted">
-                Busy
-              </p>
-              <p className="mt-1 text-ink">
-                {state.busy.length === 0
-                  ? "No calendar uploaded"
-                  : `${calendarFileName ?? "Calendar"} · ${awakeBusy} busy block${awakeBusy === 1 ? "" : "s"}${asleepCount > 0 ? " + sleep" : ""}`}
-              </p>
-            </div>
-
-            <div>
-              <p className="font-mono text-[11px] font-semibold uppercase tracking-wide text-muted">
-                Done by
-              </p>
-              <p className="mt-1 font-medium text-ink">
-                {deadlineIso ? formatLocal(deadlineIso) : "Set a deadline"}
-              </p>
-              {forecastHours > 0 ? (
-                <p className={`mt-0.5 ${HINT_CLASS}`}>
-                  {forecastHours} hours of forecast to search
-                </p>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="mt-6" aria-live="polite">
-            {attempted && errorCount > 0 && (
-              <p className={`mb-3 ${ERROR_CLASS}`}>
-                Please fix{" "}
-                {errorCount === 1 ? "the item" : `the ${errorCount} items`}{" "}
-                marked above, then try again.
-              </p>
-            )}
-            {failure && <p className={`mb-3 ${ERROR_CLASS}`}>{failure}</p>}
-          </div>
-
-          <button type="submit" className={`${PRIMARY_BUTTON} w-full sm:w-full`}>
-            Find clean times
-          </button>
-          <p className={`mt-3 ${HINT_CLASS}`}>
-            Results show recommended times on the week calendar. Nothing is
-            saved until you choose one.
-          </p>
-
-          <div role="status" aria-live="polite">
-            {submitted && (
-              <div className="mt-4 rounded-[var(--radius-button)] border border-primary bg-primary-tint p-3 text-sm text-callout">
-                <p className="font-semibold">Your plan is ready to schedule.</p>
-                <p className={`mt-1 ${HINT_CLASS}`}>
-                  Request logged to the browser console.
-                </p>
-              </div>
-            )}
-          </div>
+      <div className="mt-6 border-t border-border pt-4">
+        <div aria-live="polite">
+          {attempted && errorCount > 0 && (
+            <p className={`mb-3 ${ERROR_CLASS}`}>
+              Please fix{" "}
+              {errorCount === 1 ? "the item" : `the ${errorCount} items`} marked
+              above, then try again.
+            </p>
+          )}
+          {failure && <p className={`mb-3 ${ERROR_CLASS}`}>{failure}</p>}
         </div>
-      </aside>
+
+        <button type="submit" className={PRIMARY_BUTTON}>
+          Find clean times
+        </button>
+
+        <div role="status" aria-live="polite">
+          {submitted && (
+            <div className="mt-4 rounded-[var(--radius-button)] border border-primary bg-primary-tint p-3 text-sm text-callout">
+              <p className="font-semibold">Your plan is ready to schedule.</p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                {submitted.items.map((item) => (
+                  <li key={item.activity.id}>
+                    {activityDisplayName(item.activity.id)}:{" "}
+                    {item.durationMin} min,{" "}
+                    {item.energyKwh} kWh
+                    {item.delayStart && ", delay-start"}
+                  </li>
+                ))}
+                <li>
+                  {submitted.busyCount} busy{" "}
+                  {submitted.busyCount === 1 ? "block" : "blocks"}
+                  {submitted.asleepCount > 0 &&
+                    ` (${submitted.asleepCount} asleep)`}
+                </li>
+                <li>
+                  Done by{" "}
+                  <time dateTime={submitted.deadline}>
+                    {formatLocal(submitted.deadline)}
+                  </time>
+                </li>
+              </ul>
+              <p className={`mt-2 ${HINT_CLASS}`}>
+                Recommended, greenest, and soonest windows are on the week grid
+                and in the cards below. Every emissions figure is a modeled
+                estimate.
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
     </form>
   );
 }

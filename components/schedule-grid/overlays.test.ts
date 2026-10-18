@@ -190,7 +190,7 @@ describe("awake window", () => {
 });
 
 describe("option drawing", () => {
-  it("draws recommended/greenest and skips soonest/worst/alternative", () => {
+  it("draws recommended and greenest, and skips soonest, worst, and alternatives", () => {
     expect(shouldDrawOption({ labels: ["soonest"] })).toBe(false);
     expect(
       shouldDrawOption({ labels: ["recommended", "best", "greenest"] }),

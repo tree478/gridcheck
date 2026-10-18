@@ -127,19 +127,19 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 
 **Folders:** `lib/scheduling/**`, `lib/impact/**`, `lib/schedule-input/**`, `docs/PITCH.md`, `docs/METHODOLOGY.md`. All pure functions with unit tests, no UI. Test against `lib/mocks/*`.
 
-- [ ] **T-C1 Slots + activity catalog** · Must · branch `c/slots`
+- [x] **T-C1 Slots + activity catalog** · Must · branch `c/slots`
   - Split now → deadline (max 7 days) into 15-min slots from the next boundary, each with its hour's intensity and tier. Activity catalog per PRD §8 (energy per cycle, duration, attention `start` / `startEnd` / `throughout`, delay-start). Laptop preset optional.
   - **Done when:** tests pass for slot count, boundary rounding, and a deadline less than one slot away.
-- [ ] **T-C7 Schedule input** · Must · branch `c/schedule`
+- [x] **T-C7 Schedule input** · Must · branch `c/schedule`
   - `lib/schedule-input/`: demo schedule (student week: classes, job shift, recurring club meeting, sleep, gaps) and helpers to add/remove manual busy blocks with an "asleep" flag. Output sorted, merged `BusyBlock[]` (merged block is asleep only if all parts are).
   - **Done when:** tests pass for merge, sort, and asleep handling.
-- [ ] **T-C2 Validity rules** · Must · branch `c/validity`
+- [x] **T-C2 Validity rules** · Must · branch `c/validity`
   - Run finishes by the deadline; user free at every attended moment for the attention type; busy and sleep blocks block only attended moments; delay-start loading at any free, non-asleep moment up to 24 h before start; multi-appliance attended moments ≥ 15 min apart.
   - **Done when:** tests cover start blocked, end blocked, busy middle allowed, sleep middle allowed, delay-start load during sleep rejected, past-deadline rejected.
-- [ ] **T-C3 Emissions** · Must · branch `c/emissions`
+- [x] **T-C3 Emissions** · Must · branch `c/emissions`
   - Grams = Σ over slots of (slot intensity × kWh per slot), kWh per slot = energy per cycle ÷ slots in run.
   - **Done when:** tests match a hand calculation, including a run spanning two hours.
-- [ ] **T-C4 Ranking** · **Must (single appliance) / Then (multi)** · branch `c/options`
+- [x] **T-C4 Ranking** · **Must (single appliance) / Then (multi)** · branch `c/options`
   - `schedule(req): ScheduleResult` returning Soonest, Greenest, Best (confidence rule; equals Greenest while all hours are `pattern`), Recommended (seeded pick within `NEAR_TIE_MARGIN` of Best), Worst (scoring only), up to 5 alternatives ≥ 60 min apart. Coinciding options merge labels. "No valid window" result with a reason and suggestion (nearest valid run after the deadline, or which constraint blocked it).
   - Build single-appliance first. Then multi-appliance greedy: largest energy first, already-chosen runs as fixed blocks, re-rank the rest.
   - **Done when:** tests cover fixed-seed determinism, Recommended within margin, label merging, alternative spacing, no-window case, and a full run on the mocks.
@@ -147,13 +147,13 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
   - `docs/PITCH.md`: problem, demo script (PRD §4), honest impact framing (average intensity, small per-load savings, EVs matter most), future work (demand-based forecast and confidence-aware ranking, accounts, shared load balancing, calendar sync). Use what ASUS said about judging.
   - `docs/METHODOLOGY.md`: data source, emission factors, forecast method, scheduling rules, scoring, limitations.
   - **Done when:** the team has read the pitch once together.
-- [ ] **T-C5 Run history** · Then · branch `c/impact-log`
+- [x] **T-C5 Run history** · Then · branch `c/impact-log`
   - `lib/impact/`: local storage under a single "guest" key (keep the key a parameter): save, list (by run start, newest first), mark done, delete. Each run stores chosen, Best, Worst, Soonest grams (planning-time), kWh, window, confidence, `forecastMadeAt`, timestamp. Also stores the diversity seed. try/catch + in-memory fallback.
   - **Done when:** tests pass with mocked storage, including storage that throws.
-- [ ] **T-C9 Scoring** · Then · branch `c/scoring`
+- [x] **T-C9 Scoring** · Then · branch `c/scoring`
   - Per run: (Worst − chosen) ÷ (Worst − Best) × 100, capped at 100, floor 0; within near-tie margin of Best → 100; Worst ≤ Best → 100. Bands: ≥ 95 Top choice · 75–94 Great · 50–74 OK · < 50 Could be cleaner. Overall = energy-weighted average. Saved = Soonest − chosen (negatives count). Rank by score, ties by recency. Totals: CO₂ saved, modeled emissions, counts, band breakdown.
   - **Done when:** tests cover each scoring edge case and band boundary.
-- [ ] ~~**T-C8 Profiles**~~ · **CUT** (accounts)
+- [x] **T-C8 Profiles** · Then · logic uncut on `logic` (T-B7 and T-B8 stay cut) · `lib/impact/profiles.ts`: create, log in, log out, update defaults, reset deletes that profile's runs; passwords hashed with Web Crypto; guest history untouched
 
 ---
 

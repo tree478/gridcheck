@@ -1,7 +1,5 @@
 import type { Metadata } from "next";
-import PlanWorkspace from "@/components/planner/PlanWorkspace";
-import { MOCK_NOW, mockGrid } from "@/lib/mocks/grid";
-import { mockScheduleResult } from "@/lib/mocks/schedule";
+import PlanWorkspace from "@/components/plan/PlanWorkspace";
 
 export const metadata: Metadata = { title: "Plan a run · GridCheck" };
 
@@ -16,12 +14,7 @@ export default function PlanPage() {
           Three quick steps. We&apos;ll find the cleanest times that fit around
           your week.
         </p>
-        <PlanWorkspace
-          now={MOCK_NOW}
-          forecast={mockGrid.forecast}
-          forecastMadeAt={mockGrid.forecastMadeAt}
-          result={mockScheduleResult}
-        />
+        <PlanWorkspace />
       </div>
     </div>
   );
