@@ -41,7 +41,7 @@ Each cache miss is one synchronous xAI request:
 
 `b64_json` is requested because xAI's default image URLs are temporary. The route stores the bytes and gives the browser a same-origin path. If xAI returns a URL anyway, the server downloads that `https` URL (8 MB cap, image content type only) and stores the bytes. The temporary URL is not returned to the client. `imageExpiresAt` is `null` because the URL we return is ours.
 
-Timeouts: the xAI call aborts at 55 seconds. The route sets `maxDuration` to 60. Generation is **synchronous**. The POST stays open until the image is stored or an error is returned. There is no job id and no polling endpoint.
+Timeouts: each xAI call aborts at 55 seconds. The route sets `maxDuration` to 180 so one sequence of three scenes can finish. A single-scene POST stays open until that image is stored or an error is returned. A sequence POST streams each scene as it finishes. There is no job id and no polling endpoint.
 
 `GET` never calls xAI.
 
@@ -77,6 +77,7 @@ There is no building type in the data model, so the API does not accept a buildi
 {
   "scene": "revealed",
   "imageUrl": "/api/campus/image?scene=revealed&v=2026-10-18T04%3A00%3A00.000Z",
+  "imageDataUrl": "data:image/jpeg;base64,...",
   "mimeType": "image/jpeg",
   "imageExpiresAt": null,
   "persistence": "process-memory-and-local-disk",
@@ -94,7 +95,8 @@ There is no building type in the data model, so the API does not accept a buildi
 
 | Field | Meaning |
 |---|---|
-| `imageUrl` | Same-origin path. Use it as an `<img src>`. It is not an xAI URL. |
+| `imageUrl` | Same-origin path for a process that still holds the bytes. It is not an xAI URL. On a serverless host, do not rely on a later GET of this path. |
+| `imageDataUrl` | `data:<mime>;base64,...` built from the stored bytes. The story displays this. |
 | `imageExpiresAt` | Always `null`. The path stays valid until this server process drops the scene, or until `force: true` replaces it. |
 | `persistence` | `process-memory-and-local-disk` in `next dev` / `next start`. `process-memory` under Vitest. |
 | `cached` | `true` when this response did not call xAI. |
@@ -135,6 +137,28 @@ Scene copy:
 The numbers above are the shape, not a real result. `modeledGrams`, `savedVsSoonestGrams`, `savedVsSoonestPct`, `confidence`, and the window come from `schedule()`. `gco2PerKwh` is the forecast hour that contains `recommendedStart`, or `null` if that hour was not in the request. Every emissions figure is a modeled estimate. Label it that way. `scope` is always `one-appliance`.
 
 Times are ISO strings, displayed in `America/New_York` like the rest of the app.
+
+### `POST /api/campus/visualize` with `{ "sequence": true }`
+
+Paints `normal`, then `revealed`, then `optimized` inside **one** invocation, in that order, and streams each result as soon as it is stored. `revealed` and `optimized` edit the `normal` plate held in that same process. Three separate requests can land on three instances and each would draw a new campus, so the story uses this body instead.
+
+The body is only `{ "sequence": true }`. `scene`, `force`, `scheduleRequest`, `prompt`, and `image` are rejected. `scheduleContext` on each scene is `null`.
+
+Response: `200`, `Content-Type: application/x-ndjson`, `Cache-Control: no-store`. The stream starts before the first image is finished. Each line is one JSON object:
+
+```json
+{ "type": "scene", "scene": { "scene": "normal", "imageDataUrl": "data:image/jpeg;base64,...", "cached": false } }
+```
+
+```json
+{ "type": "error", "error": "Image generation took too long. Try again in a moment.", "code": "timeout", "scene": "revealed" }
+```
+
+If `normal` fails, later scenes are not requested. If a later scene fails, the lines already sent stay, one error line names that scene, and the stream stops. A missing `XAI_API_KEY` is a `503` JSON body before the stream starts.
+
+`maxDuration` is 180 seconds. A cold instance spends up to three images (xAI lists $0.04 per image). A refresh that hits a new instance can spend that again. The 9-per-hour cap is still per process, not per account. A warm instance returns the three scenes from cache and does not call xAI.
+
+Display `imageDataUrl`. Do not follow it with `GET /api/campus/image` after a cold start: that GET may hit an instance that never stored the bytes.
 
 ### `GET /api/campus/visualize`
 
@@ -187,7 +211,7 @@ After a successful generation the bytes live in process memory and, outside Vite
 
 For the demo, generate each scene once and leave the cache in place. Use `force: true` only when you intentionally want a new picture.
 
-The cache is not shared across machines or across separate Vercel instances. On a serverless host the disk may be read-only, so a new instance starts empty and pays for another generation. The reliable demo path is one long-lived Node process (`npm run dev` or `npm start`). A platform that kills the function before 60 seconds will drop the POST before this route can return its own timeout JSON.
+The cache is not shared across machines or across separate Vercel instances. On a serverless host the disk may be read-only, so a new instance starts empty and pays for another generation. The story avoids that split by streaming `imageDataUrl` from the same invocation that generated the bytes. `GET /api/campus/image` still only sees the instance that handles that GET. A platform that kills the function before 180 seconds will drop a cold sequence before the route can finish its own timeout line.
 
 Deleting `.campus-cache/` clears the disk copy. Restart the server to clear memory too.
 
@@ -234,22 +258,13 @@ Attach a schedule only when the planner has a real `ScheduleRequest`:
 
 The forecast in a real request is the same `HourIntensity[]` the planner already has (up to 200 hours). Busy-block `title`s are dropped on the server and are never stored.
 
-## Frontend notes for Miranda
+## Frontend notes
 
 Do not import `lib/campus/imagine.ts`, `lib/campus/cache.ts`, or `lib/campus/visualize.ts` into a client component. They read the server key and the filesystem. `import type` from `lib/campus/types.ts` is safe if you want the response types. Otherwise treat the JSON above as the contract.
 
-A loading-friendly flow:
+`components/campus/CampusStory.tsx` posts `{ "sequence": true }` once, reads the NDJSON stream, and sets each `<img src>` to that scene's `imageDataUrl`. It does not call `GET /api/campus/image`. Next stays disabled until the next scene's data URL has arrived. A `timeout` or `upstream_rate_limited` line shows one Try again button. Other errors do not retry themselves.
 
-1. `GET /api/campus/visualize`.
-2. If `scenes[scene].ready`, show `imageUrl` immediately.
-3. Otherwise `POST` that one scene and show a loading state. The first call can take most of a minute. Do not abort it at a few seconds.
-4. Put `title` and `description` in text, not inside the image. The prompts ask for no writing, logos, or watermarks, but the model can still miss.
-5. If `scheduleContext` is non-null, overlay `activityName`, the recommended window, `savedVsSoonestGrams`, and `gco2PerKwh`. Say the grams are a modeled estimate. Show `scopeNote` so the picture is not described as optimizing a university.
-6. On `cached: false`, keep the spinner up until the POST resolves, then set the image `src` to `imageUrl`.
-7. Show `error` from a failed response. Retry a 504 or `upstream_rate_limited`. Do not retry `rate_limited` in a loop. Do not retry 400.
-8. Leave `force` off during the demo.
-
-There is no frontend in this change.
+Put `title` and `description` in text, not inside the image. The prompts ask for no writing, logos, or watermarks, but the model can still miss. The recommendation card on the last scene is modeled-estimate copy supplied by the page, not pixels from xAI.
 
 ## Tests
 

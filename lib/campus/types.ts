@@ -33,6 +33,8 @@ export type CampusVisualResponse = {
   scene: CampusScene;
   /** Same-origin path. Not an xAI URL. xAI URLs expire; this one lasts for the server process, and across restarts when the local disk cache is on. */
   imageUrl: string;
+  /** Display this. A later GET of imageUrl can hit a different serverless instance with an empty cache. */
+  imageDataUrl: string;
   mimeType: string;
   imageExpiresAt: null;
   persistence: CampusPersistence;
@@ -75,3 +77,7 @@ export type CampusErrorBody = {
   error: string;
   code: CampusErrorCode;
 };
+
+export type CampusSequenceEvent =
+  | { type: "scene"; scene: CampusVisualResponse }
+  | { type: "error"; error: string; code: CampusErrorCode; scene: CampusScene | null };
