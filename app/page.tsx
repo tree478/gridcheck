@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import GridNowCard from "@/components/GridNowCard";
-import { mockGrid } from "@/lib/mocks/grid";
+import HomeGridNow from "@/components/HomeGridNow";
 
 export const metadata: Metadata = {
   title: "GridCheck",
@@ -61,7 +60,7 @@ export default function Home() {
           </div>
 
           <div className="min-w-0">
-            <GridNowCard grid={mockGrid} />
+            <HomeGridNow />
           </div>
         </section>
 
