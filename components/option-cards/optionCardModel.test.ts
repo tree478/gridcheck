@@ -83,19 +83,13 @@ describe("cardTitle", () => {
 });
 
 describe("attentionLines", () => {
-  it("adds a Load at line for the dishwasher recommended option", () => {
-    const recommended = optionWith("dishwasher", "recommended");
-    expect(recommended.loadAt).toBe("2026-10-20T22:00:00-04:00");
-    expect(attentionLines(dishwasher, recommended)).toEqual([
+  it("returns attention copy without a Load at line", () => {
+    const dish = optionWith("dishwasher", "recommended");
+    expect(dish.loadAt).toBe("2026-10-20T22:00:00-04:00");
+    expect(attentionLines(dishwasher)).toEqual([
       "You're needed at the start",
-      "Load at 10 PM",
     ]);
-  });
-
-  it("omits Load at when loadAt is unset", () => {
-    const recommended = optionWith("washer", "recommended");
-    expect(recommended.loadAt).toBeUndefined();
-    expect(attentionLines(washer, recommended)).toEqual([
+    expect(attentionLines(washer)).toEqual([
       "You're needed at the start and the end",
     ]);
   });
@@ -106,7 +100,7 @@ describe("noWindowDetails", () => {
     const ev = mockNoWindowResult.results[0];
     expect(noWindowDetails(ev)).toEqual({
       activityId: "ev",
-      name: "Device charging",
+      name: "EV charging",
       reason: "No free 10-minute moment before your deadline.",
       suggestion:
         "The nearest valid run starts Fri Oct 23 at 7:30 AM. Move your deadline later to include it.",

@@ -115,8 +115,49 @@ export function busyBlocksToForm(
   }));
 }
 
+/** Inverse of busyBlocksToForm for driving the schedule grid from form state. */
+export function busyFormToBlocks(
+  blocks: BusyFormBlock[],
+  timeZone: string = TIMEZONE,
+): BusyBlock[] {
+  return blocks.flatMap((b) => {
+    const start = localToIso(b.startLocal, timeZone);
+    const end = localToIso(b.endLocal, timeZone);
+    if (!start || !end) return [];
+    return [
+      {
+        start,
+        end,
+        asleep: b.asleep,
+        ...(b.title ? { title: b.title } : {}),
+      },
+    ];
+  });
+}
+
 export function emptyBusyBlock(key: string): BusyFormBlock {
   return { key, startLocal: "", endLocal: "", asleep: false };
+}
+
+/** Form rows that already have a real start and end, for the week grid before submit. */
+export function formBlocksToBusy(
+  blocks: BusyFormBlock[],
+  timeZone: string = TIMEZONE,
+): BusyBlock[] {
+  const busy: BusyBlock[] = [];
+  for (const block of blocks) {
+    const start = localToIso(block.startLocal, timeZone);
+    const end = localToIso(block.endLocal, timeZone);
+    if (!start || !end) continue;
+    if (Date.parse(end) <= Date.parse(start)) continue;
+    busy.push({
+      start,
+      end,
+      asleep: block.asleep,
+      ...(block.title ? { title: block.title } : {}),
+    });
+  }
+  return busy;
 }
 
 // ---------- Time zone math (Intl only, never the machine's local zone) ----------
@@ -426,12 +467,7 @@ export function buildScheduleRequest(
     }));
 
   // Passed through as entered; sorting and merging belong to lib/schedule-input (T-C7).
-  const busy: BusyBlock[] = state.busy.map((b) => ({
-    start: localToIso(b.startLocal, timeZone) as string,
-    end: localToIso(b.endLocal, timeZone) as string,
-    asleep: b.asleep,
-    ...(b.title ? { title: b.title } : {}),
-  }));
+  const busy = busyFormToBlocks(state.busy, timeZone);
 
   return {
     ok: true,

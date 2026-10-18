@@ -14,11 +14,13 @@ import {
   type GridHour,
 } from "./gridMath";
 import {
+  awakeBusyBlocks,
+  awakeWindowFromBusy,
   busyAriaLabel,
-  desktopVisibleRows,
   drawnOptionsFromResult,
-  mobileVisibleRows,
   optionAriaLabel,
+  optionTone,
+  rowsInAwakeWindow,
 } from "./overlays";
 
 type Props = {
@@ -51,19 +53,43 @@ export default function ScheduleGrid({ hours, now, busy, result }: Props) {
     const nowDayIndex = nowPos?.dayIndex ?? 0;
     const dayRows = days.map(rowsOf);
     const rows = rowCount(days);
-    const rowLabels: string[] = [];
-    for (let r = 0; r < rows; r++) {
-      const found = dayRows.map((m) => m.get(r)).find(Boolean);
-      rowLabels.push(found ? formatHourOfDay(found.ms) : "");
-    }
-    const options = drawnOptionsFromResult(result);
-    return { days, dropped, nowDayIndex, dayRows, rows, rowLabels, options };
-  }, [hours, now, result]);
+    const busyBlocks = busy ?? [];
+    const awake = awakeWindowFromBusy(busyBlocks);
+    const visibleRows = awake
+      ? rowsInAwakeWindow(awake.startHour, awake.endHour, rows)
+      : Array.from({ length: rows }, (_, i) => i);
+    const rowLabels = visibleRows.map((row) => {
+      const found = dayRows.map((m) => m.get(row)).find(Boolean);
+      return found ? formatHourOfDay(found.ms) : "";
+    });
+    const options = drawnOptionsFromResult(result, awake, days);
+    const eventBlocks = awakeBusyBlocks(busyBlocks);
+    return {
+      days,
+      dropped,
+      nowDayIndex,
+      dayRows,
+      visibleRows,
+      rowLabels,
+      options,
+      eventBlocks,
+    };
+  }, [hours, now, busy, result]);
 
-  const { days, dropped, nowDayIndex, dayRows, rows, rowLabels, options } =
-    model;
-  const busyBlocks = busy ?? [];
-  const hasOverlays = busyBlocks.length > 0 || options.length > 0;
+  const {
+    days,
+    dropped,
+    nowDayIndex,
+    dayRows,
+    visibleRows,
+    rowLabels,
+    options,
+    eventBlocks,
+  } = model;
+  const hasOverlays = eventBlocks.length > 0 || options.length > 0;
+  const showGreenest = options.some(
+    (drawn) => optionTone(drawn.option.labels) === "greenest",
+  );
 
   const [selectedDay, setSelectedDay] = useState(() => nowDayIndex);
 
@@ -114,12 +140,13 @@ export default function ScheduleGrid({ hours, now, busy, result }: Props) {
         Your week
       </h2>
       <p className="mt-1 text-sm text-secondary">
-        Your events and recommended run windows. Times are Eastern.
+        Your events and recommended run windows while you&apos;re awake. Times
+        are Eastern.
       </p>
 
       {hasOverlays && (
         <div className="mt-4">
-          <GridLegend overlays />
+          <GridLegend overlays showGreenest={showGreenest} />
         </div>
       )}
 
@@ -168,9 +195,9 @@ export default function ScheduleGrid({ hours, now, busy, result }: Props) {
           className="hidden w-12 shrink-0 flex-col gap-px sm:flex"
         >
           <div className="h-10 bg-surface" />
-          {rowLabels.map((label, r) => (
+          {rowLabels.map((label, i) => (
             <div
-              key={r}
+              key={visibleRows[i]}
               className="flex h-7 items-center justify-end bg-surface pr-1 font-mono text-[11px] tabular-nums text-muted"
             >
               {label}
@@ -198,7 +225,7 @@ export default function ScheduleGrid({ hours, now, busy, result }: Props) {
               </div>
 
               <div className="relative flex min-w-0 flex-col gap-px">
-                {Array.from({ length: rows }, (_, row) => {
+                {visibleRows.map((row) => {
                   const cell = byRow.get(row);
                   if (!cell) {
                     return (
@@ -226,18 +253,18 @@ export default function ScheduleGrid({ hours, now, busy, result }: Props) {
                       className="sm:hidden"
                       dayIndex={dayIndex}
                       days={days}
-                      busy={busyBlocks}
+                      busy={eventBlocks}
                       options={options}
-                      visibleRows={mobileVisibleRows(day)}
+                      visibleRows={visibleRows}
                       rowHeightPx={44}
                     />
                     <GridOverlays
                       className="hidden sm:block"
                       dayIndex={dayIndex}
                       days={days}
-                      busy={busyBlocks}
+                      busy={eventBlocks}
                       options={options}
-                      visibleRows={desktopVisibleRows(rows)}
+                      visibleRows={visibleRows}
                       rowHeightPx={28}
                     />
                   </>
@@ -250,7 +277,7 @@ export default function ScheduleGrid({ hours, now, busy, result }: Props) {
 
       {hasOverlays && (
         <ul className="sr-only">
-          {busyBlocks.map((block) => (
+          {eventBlocks.map((block) => (
             <li key={`${block.start}-${block.end}`}>{busyAriaLabel(block)}</li>
           ))}
           {options.map((drawn) => (

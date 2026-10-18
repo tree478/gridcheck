@@ -1,5 +1,6 @@
 "use client";
 
+import type { ChangeEvent } from "react";
 import {
   errorKey,
   type BusyFormBlock,
@@ -8,6 +9,7 @@ import {
 import {
   CHECKBOX_CLASS,
   ERROR_CLASS,
+  FOCUS_RING,
   HINT_CLASS,
   INPUT_CLASS,
   INPUT_ERROR,
@@ -22,7 +24,10 @@ type Props = {
   baseId: string;
   blocks: BusyFormBlock[];
   errors: PlannerErrors;
+  importNotice: string | null;
+  importError: string | null;
   onLoadDemo: () => void;
+  onImportFile: (file: File) => void;
   onAdd: () => void;
   onRemove: (key: string) => void;
   onChange: (key: string, patch: Patch) => void;
@@ -32,35 +37,74 @@ export default function BusyBlockFields({
   baseId,
   blocks,
   errors,
+  importNotice,
+  importError,
   onLoadDemo,
+  onImportFile,
   onAdd,
   onRemove,
   onChange,
 }: Props) {
   const asleepCount = blocks.filter((b) => b.asleep).length;
+  const importId = `${baseId}-import`;
+
+  function onFile(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (file) onImportFile(file);
+  }
+
+  // Demo / add-manual stay available to PlannerForm but are not shown — step 02 is .ics only.
+  void onLoadDemo;
+  void onAdd;
 
   return (
-    <fieldset>
-      <legend className="text-base font-semibold">When are you busy?</legend>
-      <p className={`mt-1 ${HINT_CLASS}`}>
-        Add the times you can&apos;t load or unload, and mark the ones
-        you&apos;re asleep. Times are Eastern. Your schedule stays in this tab
-        and is never uploaded.
+    <fieldset className="rounded-[var(--radius-card)] border border-border bg-surface p-5 shadow-sm sm:p-6">
+      <legend className="float-left w-full">
+        <span className="flex items-baseline gap-2">
+          <span className="font-mono text-sm font-semibold text-primary">02</span>
+          <span className="text-xl font-semibold tracking-tight text-ink">
+            When are you busy?
+          </span>
+        </span>
+      </legend>
+      <p className={`clear-both mt-1 text-sm text-secondary`}>
+        Upload a calendar file so options land when you can do them. Must be a{" "}
+        <strong className="font-semibold text-ink">.ics</strong> file. Your
+        calendar stays in this browser tab and is never uploaded to our servers.
       </p>
 
-      <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={onLoadDemo} className={SECONDARY_BUTTON}>
-          {blocks.length > 0 ? "Reload demo schedule" : "Use demo schedule"}
-        </button>
-        <button type="button" onClick={onAdd} className={SECONDARY_BUTTON}>
-          Add busy block
-        </button>
+      <div className="mt-5 flex min-w-0 flex-wrap items-center gap-3">
+        <label
+          htmlFor={importId}
+          className={`inline-flex min-h-11 cursor-pointer items-center justify-center rounded-[var(--radius-button)] bg-primary px-5 text-sm font-bold text-white hover:bg-primary-hover ${FOCUS_RING}`}
+        >
+          Upload .ics calendar
+          <input
+            id={importId}
+            type="file"
+            accept=".ics,text/calendar"
+            onChange={onFile}
+            className="sr-only"
+          />
+        </label>
+        <span className={HINT_CLASS}>Accepts .ics only</span>
       </div>
+      {importNotice && (
+        <p role="status" className="mt-3 text-sm text-secondary">
+          {importNotice}
+        </p>
+      )}
+      {importError && (
+        <p role="alert" className={ERROR_CLASS}>
+          {importError}
+        </p>
+      )}
 
       {blocks.length === 0 ? (
-        <p className="mt-3 rounded-[var(--radius-button)] border border-dashed border-border p-3 text-sm text-muted">
-          No busy blocks yet. Without any, every hour before the deadline counts
-          as free.
+        <p className="mt-4 rounded-[var(--radius-button)] border border-dashed border-border px-4 py-3 text-sm text-muted">
+          No calendar loaded yet. Choose a <strong>.ics</strong> file to
+          continue.
         </p>
       ) : (
         <>

@@ -14,6 +14,9 @@ export const SECONDARY_BUTTON = `inline-flex min-h-11 items-center justify-cente
 
 export const PRIMARY_BUTTON = `inline-flex min-h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-primary px-5 text-btn font-bold text-white hover:bg-primary-hover sm:w-auto ${FOCUS_RING}`;
 
+/** Recommended actions in Your options — orange from the home intensity scale. */
+export const ACCENT_BUTTON = `inline-flex min-h-12 w-full items-center justify-center rounded-[var(--radius-button)] bg-scale-dirty px-5 text-btn font-bold text-white hover:brightness-95 sm:w-auto ${FOCUS_RING}`;
+
 export const LABEL_CLASS = "block text-sm font-medium text-ink";
 export const HINT_CLASS = "text-xs text-muted";
 export const ERROR_CLASS = "mt-1 text-sm text-error";

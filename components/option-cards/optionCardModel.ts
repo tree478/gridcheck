@@ -17,7 +17,7 @@ import {
 } from "../schedule-grid/overlays";
 
 export const DIVERSITY_EXPLANATION =
-  "Several times are nearly as clean. We spread users across them so we don't create a new peak.";
+  "Several times are nearly as clean. We spread our recommendations for users across them so we don't create a new peak.";
 
 export const CALENDAR_PLACEHOLDER =
   "Calendar download will be available once export is connected.";
@@ -57,15 +57,8 @@ export function cardTone(
   return "alternative";
 }
 
-export function attentionLines(
-  activity: Activity,
-  option: ScheduleOption,
-): string[] {
-  const lines = [ATTENTION_TEXT[activity.attention]];
-  if (option.loadAt) {
-    lines.push(`Load at ${formatClock(option.loadAt)}`);
-  }
-  return lines;
+export function attentionLines(activity: Activity): string[] {
+  return [ATTENTION_TEXT[activity.attention]];
 }
 
 /** Honest vs-Soonest copy. Soonest is a baseline, not a savings boast. */

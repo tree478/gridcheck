@@ -2,6 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useSyncExternalStore } from "react";
+import {
+  getSessionUsername,
+  subscribeSession,
+} from "@/components/auth/sessionStore";
 
 const NAV_ITEMS = [
   { href: "/", label: "Home" },
@@ -15,8 +20,23 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
+function isProfileActive(pathname: string): boolean {
+  return (
+    pathname === "/login" ||
+    pathname.startsWith("/login/") ||
+    pathname === "/signup" ||
+    pathname.startsWith("/signup/")
+  );
+}
+
 export default function SiteHeader() {
   const pathname = usePathname();
+  const profileActive = isProfileActive(pathname);
+  const sessionUsername = useSyncExternalStore(
+    subscribeSession,
+    getSessionUsername,
+    () => null,
+  );
 
   return (
     <header className="border-b border-border bg-surface/80 backdrop-blur-sm">
@@ -68,30 +88,31 @@ export default function SiteHeader() {
                   </li>
                 );
               })}
+              <li>
+                {sessionUsername ? (
+                  <span
+                    className="flex min-h-11 items-center px-3 text-sm font-semibold text-primary"
+                    aria-live="polite"
+                    aria-label={`Logged in as ${sessionUsername}`}
+                  >
+                    {sessionUsername}
+                  </span>
+                ) : (
+                  <Link
+                    href="/login"
+                    aria-current={profileActive ? "page" : undefined}
+                    className={`flex min-h-11 items-center rounded-[var(--radius-button)] px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
+                      profileActive
+                        ? "bg-ink font-semibold text-white"
+                        : "text-muted hover:text-ink"
+                    }`}
+                  >
+                    Profile
+                  </Link>
+                )}
+              </li>
             </ul>
           </nav>
-          <Link
-            href="/login"
-            aria-current={isActive(pathname, "/login") ? "page" : undefined}
-            className={`flex min-h-11 items-center px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-              isActive(pathname, "/login")
-                ? "font-semibold text-ink"
-                : "text-muted hover:text-ink"
-            }`}
-          >
-            Log in
-          </Link>
-          <Link
-            href="/signup"
-            aria-current={isActive(pathname, "/signup") ? "page" : undefined}
-            className={`flex min-h-11 items-center px-3 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary ${
-              isActive(pathname, "/signup")
-                ? "font-semibold text-ink"
-                : "text-muted hover:text-ink"
-            }`}
-          >
-            Sign up
-          </Link>
         </div>
       </div>
     </header>
