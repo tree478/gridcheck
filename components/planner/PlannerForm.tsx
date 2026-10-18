@@ -7,7 +7,9 @@ import { demoSchedule } from "@/lib/schedule-input/schedule";
 import { schedule } from "@/lib/scheduling/schedule";
 import type {
   ActivityId,
+  ActivityResult,
   BusyBlock,
+  FixedRun,
   HourIntensity,
   ScheduleRequest,
   ScheduleResult,
@@ -202,13 +204,36 @@ export default function PlannerForm({
         setSubmitted(null);
         return;
       }
+      // Largest energy first. Each earlier item's Recommended run is passed as a
+      // FixedRun, so schedule() keeps attended moments ≥ 15 min apart.
+      const byEnergy = [...built.request.items].sort(
+        (a, b) => b.energyKwh - a.energyKwh,
+      );
+      const fixedRuns: FixedRun[] = [];
+      const byId = new Map<ActivityId, ActivityResult>();
+      for (const item of byEnergy) {
+        const [result] = schedule({
+          ...built.request,
+          items: [item],
+          fixedRuns,
+        }).results;
+        if (!result) continue;
+        byId.set(item.activity.id, result);
+        const pick = result.ok
+          ? result.options.find((o) => o.labels.includes("recommended"))
+          : undefined;
+        if (pick) {
+          fixedRuns.push({
+            activityId: item.activity.id,
+            start: pick.start,
+            end: pick.end,
+            attendedMoments: pick.attendedMoments,
+          });
+        }
+      }
+      // Cards stay in the order the user picked the appliances.
       const results = built.request.items.flatMap(
-        (item) =>
-          schedule({
-            ...built.request,
-            items: [item],
-            fixedRuns: [],
-          }).results,
+        (item) => byId.get(item.activity.id) ?? [],
       );
       onScheduled({ busy: built.request.busy, result: { results } });
       setSubmitted({

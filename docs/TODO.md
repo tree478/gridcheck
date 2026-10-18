@@ -161,7 +161,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 
 - [ ] **T-I1 Real grid data** · S · Must · branch `soumya/wire-grid`
   - Planner fetches `/api/grid` instead of mocks; "Using cached grid data" note when `source === "fallback"`.
-- [ ] **T-I2 Schedule wiring** · S · Must · branch `soumya/wire-schedule`
+- [x] **T-I2 Schedule wiring** · S · Must · branch `soumya/wire-schedule`
   - Schedule input (T-C7) → `schedule()` (T-C4) → grid overlays (T-B4) and option cards (T-B5).
 - [ ] **T-I4 Full demo check** · S + All · Must · (testing)
   - PRD §4 flow on two phones + the demo laptop, then again with EIA blocked (fallback).
