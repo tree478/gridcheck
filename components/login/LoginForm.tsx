@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useId, useMemo, useState, type FormEvent } from "react";
+import { setSessionUsername } from "@/components/auth/sessionStore";
 import {
   mockLogin,
-  mockResetProfile,
   defaultLoginState,
   validateLogin,
   type LoginFormState,
@@ -23,20 +24,15 @@ import {
 
 const WRONG_MESSAGE =
   "That username or password does not match a profile on this device.";
-const RESET_MESSAGE =
-  "Reset is a mock in this build. Nothing was deleted. Real reset lands when T-C8 exists.";
-
-type ForgotStep = "hidden" | "explain" | "confirm";
 
 export default function LoginForm() {
+  const router = useRouter();
   const baseId = useId();
   const [state, setState] = useState<LoginFormState>(defaultLoginState);
   const [attempted, setAttempted] = useState(false);
   const [wrong, setWrong] = useState(false);
   const [loggedInUsername, setLoggedInUsername] = useState<string | null>(null);
   const [failure, setFailure] = useState<string | null>(null);
-  const [forgotStep, setForgotStep] = useState<ForgotStep>("hidden");
-  const [resetDone, setResetDone] = useState(false);
 
   const fieldErrors = useMemo(
     () => (attempted ? validateLogin(state) : {}),
@@ -47,7 +43,6 @@ export default function LoginForm() {
 
   const usernameId = `${baseId}-username`;
   const passwordId = `${baseId}-password`;
-  const forgotId = `${baseId}-forgot`;
 
   function patch(next: Partial<LoginFormState>) {
     const editingContent =
@@ -75,18 +70,13 @@ export default function LoginForm() {
         return;
       }
       setLoggedInUsername(result.username);
+      setSessionUsername(result.username);
+      // Mock login only — opens tracked schedules and emissions on Impact.
+      router.push("/impact");
     } catch {
       setFailure(
         "Something went wrong. Please check the fields and try again.",
       );
-    }
-  }
-
-  function onConfirmReset() {
-    const result = mockResetProfile();
-    if (result.ok) {
-      setResetDone(true);
-      setForgotStep("explain");
     }
   }
 
@@ -165,73 +155,15 @@ export default function LoginForm() {
           Log in
         </button>
 
-        <p className="mt-3">
+        <p className="mt-3 text-sm text-secondary">
+          Don&apos;t have an account?{" "}
           <Link
             href="/signup"
-            className={`inline-flex min-h-11 items-center text-sm font-medium text-secondary underline underline-offset-2 hover:text-ink ${FOCUS_RING}`}
+            className={`font-medium text-ink underline underline-offset-2 hover:text-primary ${FOCUS_RING}`}
           >
             Sign up
           </Link>
         </p>
-
-        <div className="mt-4">
-          <button
-            type="button"
-            aria-expanded={forgotStep !== "hidden"}
-            aria-controls={forgotId}
-            onClick={() =>
-              setForgotStep((step) => (step === "hidden" ? "explain" : step))
-            }
-            className={`inline-flex min-h-11 items-center text-sm font-medium text-secondary underline underline-offset-2 hover:text-ink ${FOCUS_RING}`}
-          >
-            Forgot password?
-          </button>
-
-          {forgotStep !== "hidden" && (
-            <div id={forgotId} className="mt-3 space-y-3">
-              <p className={HINT_CLASS}>
-                On-device profiles have no email reset and no server recovery.
-                If you forget the password, you can only reset the profile on
-                this device. That is not real security.
-              </p>
-
-              {forgotStep === "explain" && (
-                <button
-                  type="button"
-                  onClick={() => setForgotStep("confirm")}
-                  className={SECONDARY_BUTTON}
-                >
-                  Reset profile on this device
-                </button>
-              )}
-
-              {forgotStep === "confirm" && (
-                <div className="flex min-w-0 flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={onConfirmReset}
-                    className={SECONDARY_BUTTON}
-                  >
-                    Yes, reset this profile
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setForgotStep("explain")}
-                    className={SECONDARY_BUTTON}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              )}
-
-              <div role="status" aria-live="polite">
-                {resetDone && (
-                  <p className={`mt-1 ${HINT_CLASS}`}>{RESET_MESSAGE}</p>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
 
         <div role="status" aria-live="polite">
           {loggedInUsername && (
