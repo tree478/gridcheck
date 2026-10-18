@@ -53,7 +53,12 @@ export default function ImpactSummary({ totals }: Props) {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className={CARD}>
           <p className="text-sm font-medium text-muted">Overall score</p>
-          <p className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <p
+            className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-1"
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+          >
             <span className="text-5xl font-extrabold tabular-nums tracking-tight text-primary sm:text-6xl">
               {formatScore(totals.overallScore)}
             </span>

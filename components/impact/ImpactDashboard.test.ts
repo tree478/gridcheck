@@ -1,15 +1,18 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   createRunHistory,
   type KeyValueStore,
   type RunDraft,
 } from "../../lib/impact/history";
 import {
+  GUEST_RUNS_CHANGED_EVENT,
   deleteGuestRun,
   listGuestRuns,
   markGuestRunDone,
+  notifyGuestRunsChanged,
   openGuestHistory,
 } from "./guestHistory";
+import { impactTotals } from "./impactModel";
 
 function draft(overrides: Partial<RunDraft> = {}): RunDraft {
   return {
@@ -64,5 +67,88 @@ describe("Impact guest history helpers", () => {
     const afterDelete = deleteGuestRun(history, "run-impact-1");
     expect(afterDelete).toHaveLength(0);
     expect(listGuestRuns(openGuestHistory(store))).toHaveLength(0);
+  });
+
+  it("changes the overall score when a dirtier run is added then removed", () => {
+    const store = memoryStore();
+    let nextId = 0;
+    const history = createRunHistory(store, {
+      createId: () => `run-${(nextId += 1)}`,
+      now: () => "2026-10-18T10:00:00.000Z",
+    });
+
+    history.save(
+      draft({
+        activityId: "washer",
+        kwh: 1,
+        chosenGrams: 80,
+        bestGrams: 80,
+        worstGrams: 200,
+      }),
+    );
+    const afterClean = impactTotals(listGuestRuns(openGuestHistory(store)));
+    expect(afterClean.overallScore).toBe(100);
+    expect(afterClean.runCount).toBe(1);
+
+    history.save(
+      draft({
+        activityId: "ev",
+        start: "2026-10-19T14:00:00.000Z",
+        end: "2026-10-19T18:00:00.000Z",
+        kwh: 10,
+        chosenGrams: 200,
+        bestGrams: 80,
+        worstGrams: 200,
+      }),
+    );
+    const withDirty = listGuestRuns(openGuestHistory(store));
+    const afterDirty = impactTotals(withDirty);
+    expect(afterDirty.runCount).toBe(2);
+    expect(afterDirty.overallScore).toBeCloseTo((100 * 1 + 0 * 10) / 11);
+    expect(afterDirty.overallScore).toBeLessThan(afterClean.overallScore);
+
+    const dirtyId = withDirty.find((run) => run.activityId === "ev")?.id;
+    expect(dirtyId).toBeDefined();
+    const afterRemove = deleteGuestRun(openGuestHistory(store), dirtyId!);
+    const totals = impactTotals(afterRemove);
+    expect(totals.runCount).toBe(1);
+    expect(totals.overallScore).toBe(100);
+  });
+
+  it("notifies listeners when guest runs change", () => {
+    const listeners = new Map<string, Set<EventListener>>();
+    vi.stubGlobal("window", {
+      addEventListener(type: string, listener: EventListener) {
+        if (!listeners.has(type)) listeners.set(type, new Set());
+        listeners.get(type)!.add(listener);
+      },
+      removeEventListener(type: string, listener: EventListener) {
+        listeners.get(type)?.delete(listener);
+      },
+      dispatchEvent(event: Event) {
+        for (const listener of listeners.get(event.type) ?? []) {
+          listener(event);
+        }
+        return true;
+      },
+    });
+
+    const listener = vi.fn();
+    window.addEventListener(GUEST_RUNS_CHANGED_EVENT, listener);
+    notifyGuestRunsChanged();
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    const store = memoryStore();
+    const history = createRunHistory(store, {
+      createId: () => "run-notify-1",
+      now: () => "2026-10-18T10:00:00.000Z",
+    });
+    history.save(draft());
+    listener.mockClear();
+    deleteGuestRun(openGuestHistory(store), "run-notify-1");
+    expect(listener).toHaveBeenCalledTimes(1);
+
+    window.removeEventListener(GUEST_RUNS_CHANGED_EVENT, listener);
+    vi.unstubAllGlobals();
   });
 });
