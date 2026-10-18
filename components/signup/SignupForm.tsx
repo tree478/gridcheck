@@ -1,7 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useId, useMemo, useState, type FormEvent } from "react";
+import { setSessionUsername } from "@/components/auth/sessionStore";
 import {
   mockCreateProfile,
   defaultSignupState,
@@ -24,6 +26,7 @@ import {
 const TAKEN_MESSAGE = "That username is already on this device.";
 
 export default function SignupForm() {
+  const router = useRouter();
   const baseId = useId();
   const [state, setState] = useState<SignupFormState>(defaultSignupState);
   const [attempted, setAttempted] = useState(false);
@@ -71,6 +74,9 @@ export default function SignupForm() {
         return;
       }
       setCreatedUsername(result.username);
+      setSessionUsername(result.username);
+      // Mock signup only — terms already required; then open Impact.
+      router.push("/impact");
     } catch {
       setFailure(
         "Something went wrong. Please check the fields and try again.",
@@ -156,8 +162,8 @@ export default function SignupForm() {
               className={`mt-1 ${CHECKBOX_CLASS}`}
             />
             <span className="text-sm text-secondary">
-              I understand this profile stays on this device and is not real
-              security.
+              I agree to the terms. I understand this profile stays on this
+              device and is not real security.
             </span>
           </label>
           {termsError && (
@@ -179,10 +185,11 @@ export default function SignupForm() {
           Create profile
         </button>
 
-        <p className="mt-3">
+        <p className="mt-3 text-sm text-secondary">
+          Already have an account?{" "}
           <Link
             href="/login"
-            className={`inline-flex min-h-11 items-center text-sm font-medium text-secondary underline underline-offset-2 hover:text-ink ${FOCUS_RING}`}
+            className={`font-medium text-ink underline underline-offset-2 hover:text-primary ${FOCUS_RING}`}
           >
             Log in
           </Link>

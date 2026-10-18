@@ -1,14 +1,10 @@
 "use client";
 
-import { useId, useState } from "react";
-import {
-  ERROR_CLASS,
-  HINT_CLASS,
-} from "@/components/planner/plannerStyles";
+import { useState } from "react";
+import { ERROR_CLASS } from "@/components/planner/plannerStyles";
 import type { ActivityId, ScheduleOption, ScheduleResult } from "@/lib/types";
 import OptionCards from "./OptionCards";
 import {
-  CALENDAR_PLACEHOLDER,
   DIVERSITY_EXPLANATION,
   hasRecommendedCard,
 } from "./optionCardModel";
@@ -23,7 +19,6 @@ type Props = {
 
 export default function PlanOptions({ status, result, forecastMadeAt }: Props) {
   void forecastMadeAt;
-  const calendarHintId = useId();
   const [chosen, setChosen] = useState<
     Partial<Record<ActivityId, ScheduleOption>>
   >({});
@@ -41,19 +36,10 @@ export default function PlanOptions({ status, result, forecastMadeAt }: Props) {
 
   return (
     <section className="mt-10 min-w-0 border-t border-border pt-8">
-      <h2 className="text-2xl font-semibold tracking-tight text-ink">
-        Your options
-      </h2>
-      <p className={`mt-2 ${HINT_CLASS}`}>
-        Times are in America/New_York. Every emissions figure is a modeled
-        estimate.
-      </p>
-      <p id={calendarHintId} className={`mt-1 ${HINT_CLASS}`}>
-        {CALENDAR_PLACEHOLDER}
-      </p>
+      <h2 className="sr-only">Your options</h2>
 
       {status === "loading" ? (
-        <p role="status" aria-live="polite" className="mt-4 text-secondary">
+        <p role="status" aria-live="polite" className="text-secondary">
           Finding clean times…
         </p>
       ) : null}
@@ -65,7 +51,7 @@ export default function PlanOptions({ status, result, forecastMadeAt }: Props) {
       ) : null}
 
       {status === "ready" ? (
-        <div className="mt-4 space-y-8">
+        <div className="space-y-8">
           {showDiversity ? (
             <p className="text-sm text-secondary">{DIVERSITY_EXPLANATION}</p>
           ) : null}

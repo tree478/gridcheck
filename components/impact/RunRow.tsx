@@ -98,17 +98,14 @@ export default function RunRow({ row, onMarkDone, onDelete }: Props) {
               Done
             </span>
           ) : (
-            <>
-              <span className="text-sm font-medium text-muted">Scheduled</span>
-              <button
-                type="button"
-                onClick={() => onMarkDone(run.id)}
-                aria-label={`Mark ${name} run done`}
-                className={`inline-flex min-h-10 items-center justify-center rounded-[var(--radius-button)] border border-border bg-surface px-3 text-sm font-semibold text-ink hover:bg-chip ${FOCUS_RING}`}
-              >
-                Mark done
-              </button>
-            </>
+            <button
+              type="button"
+              onClick={() => onMarkDone(run.id)}
+              aria-label={`Mark ${name} run as done`}
+              className={`inline-flex min-h-10 items-center justify-center rounded-[var(--radius-button)] border border-border bg-surface px-3 text-sm font-semibold text-ink hover:bg-chip ${FOCUS_RING}`}
+            >
+              Mark as done
+            </button>
           )}
           <button
             type="button"

@@ -43,7 +43,7 @@ export const washerRecommendedRun: RunRecord = {
     forecastMadeAt: mockGrid.forecastMadeAt,
     createdAt: "2026-10-18T09:05:00-04:00",
   }),
-  status: "done",
+  status: "scheduled",
 };
 
 export const dishwasherRecommendedRun: RunRecord = {
