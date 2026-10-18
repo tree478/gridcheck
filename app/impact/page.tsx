@@ -24,10 +24,7 @@ export default function ImpactPage() {
                 "radial-gradient(ellipse 90% 120% at 85% 20%, rgba(34,211,238,0.22), transparent 55%), linear-gradient(135deg, #0b1620 0%, #12201c 55%, #0a1418 100%)",
             }}
           >
-            <p className="font-mono text-mono-label font-semibold uppercase tracking-[0.14em] text-cyan-200/80 md:text-mono-label-desktop">
-              SpaceXAI · Grok Imagine
-            </p>
-            <h2 className="mt-2 text-h2 font-extrabold tracking-tight text-white md:text-h2-desktop">
+            <h2 className="text-h2 font-extrabold tracking-tight text-white md:text-h2-desktop">
               The Invisible Campus
             </h2>
             <p className="mt-2 max-w-xl text-body text-white/70 md:text-body-desktop">
