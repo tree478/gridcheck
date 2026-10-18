@@ -159,7 +159,7 @@ Read `AGENTS.md` and `docs/PRD.md` (v2.1) before starting any task. If this file
 
 ## Integration — S leads (start when T-B3, T-B5, and T-C4 are merged)
 
-- [ ] **T-I1 Real grid data** · S · Must · branch `soumya/wire-grid`
+- [x] **T-I1 Real grid data** · S · Must · branch `soumya/wire-grid`
   - Planner fetches `/api/grid` instead of mocks; "Using cached grid data" note when `source === "fallback"`.
 - [ ] **T-I2 Schedule wiring** · S · Must · branch `soumya/wire-schedule`
   - Schedule input (T-C7) → `schedule()` (T-C4) → grid overlays (T-B4) and option cards (T-B5).
