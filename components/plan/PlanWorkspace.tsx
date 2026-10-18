@@ -3,18 +3,26 @@
 import { useCallback, useEffect, useState } from "react";
 import PlanOptions from "@/components/option-cards/PlanOptions";
 import PlannerForm from "@/components/planner/PlannerForm";
-import { ERROR_CLASS } from "@/components/planner/plannerStyles";
+import { ERROR_CLASS, PRIMARY_BUTTON } from "@/components/planner/plannerStyles";
 import ScheduleGrid from "@/components/schedule-grid/ScheduleGrid";
 import { browserStore, createRunHistory } from "@/lib/impact/history";
-import type { BusyBlock, GridResponse, HourIntensity, ScheduleResult } from "@/lib/types";
+import type {
+  BusyBlock,
+  GridResponse,
+  HourIntensity,
+  PlannedActivity,
+  ScheduleResult,
+} from "@/lib/types";
 
 const EMPTY_RESULT: ScheduleResult = { results: [] };
+const GRID_FETCH_MS = 15_000;
 
 type GridStatus = "loading" | "ready" | "error";
 
 type Submission = {
   busy: BusyBlock[];
   result: ScheduleResult;
+  items: PlannedActivity[];
 };
 
 function isHourIntensity(value: unknown): value is HourIntensity {
@@ -60,6 +68,7 @@ function loadDiversitySeed(): number {
 export default function PlanWorkspace() {
   const [grid, setGrid] = useState<GridResponse | null>(null);
   const [gridStatus, setGridStatus] = useState<GridStatus>("loading");
+  const [gridAttempt, setGridAttempt] = useState(0);
   const [nowIso, setNowIso] = useState<string | null>(null);
   const [diversitySeed, setDiversitySeed] = useState(1);
   const [previewBusy, setPreviewBusy] = useState<BusyBlock[]>([]);
@@ -78,7 +87,10 @@ export default function PlanWorkspace() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/grid")
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => controller.abort(), GRID_FETCH_MS);
+
+    fetch("/api/grid", { signal: controller.signal })
       .then(async (response) => {
         if (!response.ok) throw new Error("grid");
         const body: unknown = await response.json();
@@ -93,11 +105,17 @@ export default function PlanWorkspace() {
           setGrid(null);
           setGridStatus("error");
         }
+      })
+      .finally(() => {
+        window.clearTimeout(timer);
       });
+
     return () => {
       cancelled = true;
+      controller.abort();
+      window.clearTimeout(timer);
     };
-  }, []);
+  }, [gridAttempt]);
 
   const onBusyChange = useCallback((blocks: BusyBlock[]) => {
     setPreviewBusy(blocks);
@@ -113,11 +131,18 @@ export default function PlanWorkspace() {
     setPlanVersion((version) => version + 1);
   }, []);
 
+  const retryGrid = useCallback(() => {
+    setGrid(null);
+    setGridStatus("loading");
+    setGridAttempt((n) => n + 1);
+  }, []);
+
+  // Grid failures are shown above with Try again; keep options idle then.
   const optionsStatus: "loading" | "error" | "idle" | "ready" =
     gridStatus === "loading"
       ? "loading"
       : gridStatus === "error"
-        ? "error"
+        ? "idle"
         : submitted
           ? "ready"
           : "idle";
@@ -133,9 +158,14 @@ export default function PlanWorkspace() {
   return (
     <div className="min-w-0">
       {gridStatus === "error" ? (
-        <p role="alert" className={`mt-8 ${ERROR_CLASS}`}>
-          We couldn&apos;t build options. Try again.
-        </p>
+        <div role="alert" className="mt-8 space-y-3">
+          <p className={ERROR_CLASS}>
+            We couldn&apos;t load grid data. Check your connection and try again.
+          </p>
+          <button type="button" onClick={retryGrid} className={PRIMARY_BUTTON}>
+            Try again
+          </button>
+        </div>
       ) : null}
 
       <div className="mt-8">
@@ -170,6 +200,7 @@ export default function PlanWorkspace() {
         key={planVersion}
         status={optionsStatus}
         result={submitted?.result ?? EMPTY_RESULT}
+        items={submitted?.items ?? []}
         forecastMadeAt={grid?.forecastMadeAt ?? ""}
       />
     </div>

@@ -1,11 +1,13 @@
 // Pure option-card display helpers. Relative imports so Vitest resolves without an alias.
 import { ACTIVITY_CATALOG, TIMEZONE } from "../../lib/constants";
+import type { RunDraft } from "../../lib/impact/history";
 import type {
   Activity,
   ActivityId,
   ActivityResult,
   AttentionType,
   OptionLabel,
+  PlannedActivity,
   RunRecord,
   ScheduleOption,
   Tier,
@@ -121,6 +123,36 @@ export function hasRecommendedCard(options: ScheduleOption[]): boolean {
   return visibleOptions(options).some((option) =>
     option.labels.includes("recommended"),
   );
+}
+
+/** Build a guest RunDraft from a chosen option, planning-time reference, and entered kWh. */
+export function buildRunDraft(input: {
+  activityId: ActivityId;
+  option: ScheduleOption;
+  reference: { bestGrams: number; worstGrams: number; soonestGrams: number };
+  kwh: number;
+  forecastMadeAt: string;
+}): RunDraft {
+  return {
+    activityId: input.activityId,
+    start: input.option.start,
+    end: input.option.end,
+    kwh: input.kwh,
+    chosenGrams: input.option.modeledGrams,
+    bestGrams: input.reference.bestGrams,
+    worstGrams: input.reference.worstGrams,
+    soonestGrams: input.reference.soonestGrams,
+    confidence: input.option.confidence,
+    forecastMadeAt: input.forecastMadeAt,
+  };
+}
+
+/** Look up the user's entered energy for an activity (not the catalog default). */
+export function enteredEnergyKwh(
+  items: PlannedActivity[],
+  activityId: ActivityId,
+): number | undefined {
+  return items.find((item) => item.activity.id === activityId)?.energyKwh;
 }
 
 export function chosenRecordPreview(input: {
