@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import CampusStory from "@/components/campus/CampusStory";
 import { formatWindow } from "@/components/option-cards/optionCardModel";
+import { campusSceneStatus } from "@/lib/campus/visualize";
 import { ACTIVITY_CATALOG } from "@/lib/constants";
 import { mockScheduleResult } from "@/lib/mocks/schedule";
 
@@ -9,6 +11,9 @@ export const metadata: Metadata = {
   description:
     "Three artistic scenes of a fictional campus, generated once and shown from the local cache.",
 };
+
+/** The saved scenes are read from this machine on each request. */
+export const instant = false;
 
 function demoRecommendation() {
   const result = mockScheduleResult.results.find((item) => item.ok && item.activityId === "washer");
@@ -23,6 +28,17 @@ function demoRecommendation() {
   };
 }
 
-export default function CampusPage() {
-  return <CampusStory recommendation={demoRecommendation()} />;
+export default async function CampusPage() {
+  await connection();
+  const status = campusSceneStatus();
+  return (
+    <CampusStory
+      recommendation={demoRecommendation()}
+      initialImages={{
+        normal: status.scenes.normal.imageUrl,
+        revealed: status.scenes.revealed.imageUrl,
+        optimized: status.scenes.optimized.imageUrl,
+      }}
+    />
+  );
 }
